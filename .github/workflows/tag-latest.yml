@@ -1,10 +1,8 @@
 name: Tag Latest
 
 on:
-  push:
-    branches:
-      - main
-      - master
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -15,6 +13,9 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Tag Latest
         uses: EndBug/latest-tag@latest
         with:
