@@ -1,0 +1,22 @@
+name: Tag Latest
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  tag_latest:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tag Latest
+        uses: EndBug/latest-tag@latest
+        with:
+          ref: latest
+
