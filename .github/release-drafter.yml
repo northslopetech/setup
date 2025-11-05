@@ -51,3 +51,5 @@ autolabeler:
     branch:
       - '/feature\/.+/'
       - '/enhancement\/.+/'
+
+latest: true
