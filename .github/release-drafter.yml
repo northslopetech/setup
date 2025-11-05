@@ -52,4 +52,4 @@ autolabeler:
       - '/feature\/.+/'
       - '/enhancement\/.+/'
 
-latest: true
+latest: 'true'
