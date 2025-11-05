@@ -2,5 +2,6 @@
 
 
 ```
-/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/setup.sh)"
+/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/main/setup.sh)"
 ```
+
