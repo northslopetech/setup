@@ -28,22 +28,21 @@ if [[ $? -ne 0 ]]; then
     asdf set --home nodejs ${TARGET_DEFAULT_GLOBAL_NODE}
 fi
 
+# Install pnpm
+pnpm --help > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    echo "Missing pnpm. Installing..."
+    npm install -g pnpm
+fi
+
 # Install python
-export TARGET_DEFAULT_GLOBAL_PYTHON=24.11.0
+export TARGET_DEFAULT_GLOBAL_PYTHON=3.13.9
 python --help > /dev/null 2>&1 && which python | grep asdf > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     echo "Missing python. Installing..."
     asdf plugin add python
     asdf install python ${TARGET_DEFAULT_GLOBAL_PYTHON}
     asdf set --home python ${TARGET_DEFAULT_GLOBAL_PYTHON}
-fi
-
-
-# Install pnpm
-pnpm --help > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    echo "Missing pnpm. Installing..."
-    npm install -g pnpm
 fi
 
 # Install GitHub CLI
