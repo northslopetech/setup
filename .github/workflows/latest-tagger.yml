@@ -1,6 +1,0 @@
-- name: Tag Latest
-  uses: EndBug/latest-tag@latest
-  with:
-    # You can change the name of the tag or branch with this input.
-    # Default: 'latest'
-    ref: latest
