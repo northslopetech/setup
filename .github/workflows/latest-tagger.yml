@@ -1,4 +1,4 @@
-name: Release Drafter
+name: Tag with Latest
 
 on:
   push:
