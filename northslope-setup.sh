@@ -7,7 +7,7 @@ function get_latest_version {
 
 northslope_setup_version=`cat ${HOME}/.northslope-setup-version`
 
-if [[ -z $1 ]]; then
+if [[ ! -z $1 ]]; then
     echo "Usage: setup"
     echo "   This command will run the northslope setup script for your machine."
     echo "   Your Version  : ${northslope_setup_version}"
