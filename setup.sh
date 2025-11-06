@@ -25,11 +25,8 @@ function check_home_version_set {
 }
 
 function asdf_install_and_set {
-
     local tool=$1
     local version=$2
-
-    set -x
 
     print_check_msg ${tool}
 
@@ -117,61 +114,28 @@ asdf --help > /dev/null
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install asdf
+    # TODO: Can we force asdf to always override the brew path?
     echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
     export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 fi
 print_installed_msg ${TOOL}
 
-## The following commands require asdf
+# Install all of the following tools using asdf
+asdf_tools=(
+    nodejs__24.11.0
+    pnpm__10.20.0
+    python__3.13.9
+    github-cli__2.83.0
+)
 
-export TARGET_DEFAULT_GLOBAL_NODE=24.11.0
-# Install npm
-TOOL=nodejs
-print_check_msg ${TOOL}
-npm help > /dev/null 2>&1 && which npm | grep asdf > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    asdf plugin add nodejs
-    asdf install nodejs ${TARGET_DEFAULT_GLOBAL_NODE}
-    asdf set --home nodejs ${TARGET_DEFAULT_GLOBAL_NODE}
-fi
-print_installed_msg ${TOOL}
-
-# Install pnpm
-TOOL=pnpm
-print_check_msg ${TOOL}
-pnpm --help > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    npm install -g pnpm
-fi
-print_installed_msg ${TOOL}
-
-# Install python
-TOOL=python
-print_check_msg ${TOOL}
-export TARGET_DEFAULT_GLOBAL_PYTHON=3.13.9
-python --help > /dev/null 2>&1 && which python | grep asdf > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    asdf plugin add python
-    asdf install python ${TARGET_DEFAULT_GLOBAL_PYTHON}
-    asdf set --home python ${TARGET_DEFAULT_GLOBAL_PYTHON}
-fi
-print_installed_msg ${TOOL}
-
-# Install GitHub CLI
-TOOL=gh
-print_check_msg ${TOOL}
-gh --version > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install gh
-fi
-print_installed_msg ${TOOL}
-
+for asdf_tool in ${asdf_tools[@]}; do
+    tool=${asdf_tool%__*}
+    version=${asdf_tool#*__}
+    asdf_install_and_set ${tool} ${version}
+done
 asdf reshim
 
+echo
 echo "Northslope Setup Complete! ✅"
 echo
 echo "Run 'setup' in the future to get the latest and greatest tools"
