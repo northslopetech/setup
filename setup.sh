@@ -19,6 +19,36 @@ function print_missing_msg {
     echo "Missing '${tool}'... Installing... "
 }
 
+function check_home_version_set {
+    local tool=$1
+    cat ${HOME}/.tool-versions | grep ${tool} > /dev/null 2>&1
+}
+
+function asdf_install_and_set {
+
+    local tool=$1
+    local version=$2
+
+    set -x
+
+    print_check_msg ${tool}
+
+    # No-op if plugin exists
+    asdf plugin add ${tool}
+    # No-op if command is installed
+    asdf install ${tool} ${version}
+
+    check_home_version_set
+    if [[ $? -ne 0 ]]; then
+        # If a home version is not chosen
+        # we choose the default version
+        # TODO: Can we compare versions and
+        # forcibly upgrade if an old one is set?
+        asdf set --home ${tool} ${version}
+    fi
+    print_installed_msg ${tool}
+}
+
 NORTHSLOPE_SETUP_SCRIPT_PATH=${HOME}/.northslope-setup.sh
 NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${HOME}/.northslope-setup-version 
 
@@ -91,6 +121,8 @@ if [[ $? -ne 0 ]]; then
     export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 fi
 print_installed_msg ${TOOL}
+
+## The following commands require asdf
 
 export TARGET_DEFAULT_GLOBAL_NODE=24.11.0
 # Install npm
