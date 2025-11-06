@@ -31,9 +31,9 @@ function asdf_install_and_set {
     print_check_msg ${tool}
 
     # No-op if plugin exists
-    asdf plugin add ${tool}
+    asdf plugin add ${tool} > /dev/null 2>&1
     # No-op if command is installed
-    asdf install ${tool} ${version}
+    asdf install ${tool} ${version} > /dev/null 2>&1
 
     check_home_version_set
     if [[ $? -ne 0 ]]; then
