@@ -5,7 +5,7 @@ on:
     types: [published]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   tag_latest:
@@ -20,4 +20,5 @@ jobs:
         uses: EndBug/latest-tag@latest
         with:
           ref: latest
+          force-branch: true
 
