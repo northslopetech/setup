@@ -140,3 +140,4 @@ echo
 echo "Northslope Setup Complete! ✅"
 echo
 echo "Run 'setup' in the future to get the latest and greatest tools"
+echo "Please close and reopen your terminal to continue..."
