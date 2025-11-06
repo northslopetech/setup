@@ -21,4 +21,4 @@ if [[ ! -z $1 ]]; then
     exit 1
 fi
 
-/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/tags/latest/setup.sh)"
+/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh)"

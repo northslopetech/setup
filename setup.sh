@@ -88,7 +88,7 @@ if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VER
     else
         echo "Upgrading ${TOOL}..."
     fi
-    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/tags/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
 fi
 print_installed_msg ${TOOL}
