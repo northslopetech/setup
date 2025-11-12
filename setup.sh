@@ -62,20 +62,19 @@ function asdf_install_and_set {
 }
 
 function emit_setup_started_event {
-    utc_timestamp=`date --utc --iso-8601`
     current_timezone=`date "+%z"`
     curl -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
         --data '{
-            "api_key": "'"${POSTHOG_KEY}"'"",
+            "api_key": "'"${POSTHOG_KEY}"'",
             "event": "setup_started",
             "properties": {
+                "distinct_id": "'"${USER}"'",
                 "user": "'"${USER}"'",
-                "utc_timestamp": "'"${utc_timestamp}"'",
                 "timezone_offset": "'"${current_timezone}"'",
                 "session": "'"${session_key}"'"
             }
-        }'
+        }' > /dev/null
 }
 
 emit_setup_started_event
