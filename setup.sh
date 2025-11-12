@@ -226,6 +226,7 @@ osdk-cli --help > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
     cd ${LOCAL_OSDK_CLI_DIR}
+    pnpm install
     pnpm build
     npm link
     cd -
