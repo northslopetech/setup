@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+DID_FAIL=0
+
 function get_latest_version {
     curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | jq -r '.tag_name' | sed 's/\s//g' | sed 's/\n//g'
 }
@@ -7,6 +9,12 @@ function get_latest_version {
 function print_check_msg {
     local tool=$1
     printf "Checking '${tool}'... "
+}
+
+function print_failed_install_msg {
+    local tool=$1
+    echo "'${tool}' Not Installed 🚫"
+    DID_FAIL=1
 }
 
 function print_installed_msg {
@@ -195,9 +203,45 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "'gh auth' Authorized ✅"
 
+# Cloning osdk-cli
+NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
+mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
+LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
+TOOL="osdk-cli package"
+print_check_msg ${TOOL}
+if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
+    print_missing_msg ${TOOL}
+    gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}
+    cd ${LOCAL_OSDK_CLI_DIR}
+    # TODO: Switch to origin/latest once the bugfix is put in place
+    git checkout origin/bugfix/allow-npm-install-from-clone
+    cd -
+fi
+print_installed_msg ${TOOL}
+
+# Installing osdk-cli
+TOOL="osdk-cli"
+print_check_msg ${TOOL}
+osdk-cli --help > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    npm -g install ${LOCAL_OSDK_CLI_DIR}
+fi
+if [[ $? -ne 0 ]]; then
+    print_failed_install_msg ${TOOL}
+else
+    print_installed_msg ${TOOL}
+fi
+
+
 
 echo
-echo "Northslope Setup Complete! ✅"
-echo
-echo "Run 'setup' in the future to get the latest and greatest tools"
-echo "Please close and reopen your terminal to continue..."
+if [[ $DID_FAIL -eq 0 ]]; then
+    echo "Northslope Setup Complete! ✅"
+    echo
+    echo "Run 'setup' in the future to get the latest and greatest tools"
+    echo "Please close and reopen your terminal to continue..."
+else
+    echo "Northslope Setup Failed! 🚫"
+    echo "Please contact @tnguyen and show him your terminal output."
+fi
