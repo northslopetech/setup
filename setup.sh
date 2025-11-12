@@ -225,7 +225,10 @@ print_check_msg ${TOOL}
 osdk-cli --help > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
-    npm -g install ${LOCAL_OSDK_CLI_DIR}
+    cd ${LOCAL_OSDK_CLI_DIR}
+    pnpm build
+    npm link
+    cd -
 fi
 if [[ $? -ne 0 ]]; then
     print_failed_install_msg ${TOOL}
