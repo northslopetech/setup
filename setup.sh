@@ -101,6 +101,15 @@ print_check_msg ${TOOL}
 cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
+    echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
+    echo "  ⚠️ Please read the following directions ⚠️"
+    echo "  ⚠️ carefully. You may be asked for your ⚠️"
+    echo "  ⚠️ password, which is the password for  ⚠️"
+    echo "  ⚠️ your computer. Please be prepared.   ⚠️"
+    echo "  Press Enter once you have your computer password..."
+    read
+    echo "  ⚠️ The following command can take upwards of 10-20 minutes, depending on your internet connection."
+    echo "  ⚠️ Please be patient, but if you need to cancel at any time, press Ctrl+C"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zshrc
     eval $(/opt/homebrew/bin/brew shellenv)
