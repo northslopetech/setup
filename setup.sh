@@ -1,11 +1,6 @@
 #!/bin/zsh
 
-function gen_uuid {
-    python -c "import uuid; print(str(uuid.uuid4()))"
-}
-
 POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
-session_key=`gen_uuid`
 
 DID_FAIL=0
 
@@ -71,8 +66,7 @@ function emit_setup_started_event {
             "properties": {
                 "distinct_id": "'"${USER}"'",
                 "user": "'"${USER}"'",
-                "timezone_offset": "'"${current_timezone}"'",
-                "session": "'"${session_key}"'"
+                "timezone_offset": "'"${current_timezone}"'"
             }
         }' > /dev/null
 }
