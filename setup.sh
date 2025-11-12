@@ -1,7 +1,5 @@
 #!/bin/zsh
 
-POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
-
 DID_FAIL=0
 
 function get_latest_version {
@@ -56,19 +54,24 @@ function asdf_install_and_set {
     print_installed_msg ${tool}
 }
 
+session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
+POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
+
 function emit_setup_started_event {
+    timestamp=`date -u '+%Y-%m-%dT%H:%M:%SZ'`
     current_timezone=`date "+%z"`
-    curl -XPOST https://us.i.posthog.com/capture/ \
+    curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
         --data '{
             "api_key": "'"${POSTHOG_KEY}"'",
             "event": "setup_started",
             "properties": {
                 "distinct_id": "'"${USER}"'",
-                "user": "'"${USER}"'",
-                "timezone_offset": "'"${current_timezone}"'"
+                "timezone_offset": "'"${current_timezone}"'",
+                "session_key": "'"${session_key}"'",
+                "timestamp": "'"${timestamp}"'",
             }
-        }' > /dev/null
+        }' > /dev/null 2>&1
 }
 
 emit_setup_started_event
