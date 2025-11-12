@@ -46,8 +46,19 @@ function asdf_install_and_set {
     print_installed_msg ${tool}
 }
 
-NORTHSLOPE_SETUP_SCRIPT_PATH=${HOME}/.northslope-setup.sh
-NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${HOME}/.northslope-setup-version 
+NORTHSLOPE_DIR=${HOME}/.northslope
+mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
+
+NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
+NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
+
+# Remove old versions of script and cache
+for f in ${HOME}/.northslope*; do
+    if [[ -d ${f} ]]; then
+        continue
+    fi
+    rm ${f}
+done
 
 # Add `setup` command to .zshrc
 TOOL=setup
@@ -55,8 +66,21 @@ print_check_msg ${TOOL}
 cat ~/.zshrc | grep "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
-    echo "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" >> $HOME/.zshrc
+    # Remove old setup alias
+    TEMP_ZSHRC=${NORTHSLOPE_DIR}/temp-zshrc
+    cat ${HOME}/.zshrc | fgrep -v "alias setup=\"" | fgrep -v "# Added by Northslope" > ${TEMP_ZSHRC}
+    # Add the new alias
+    echo "" >> ${TEMP_ZSHRC}
+    echo "# Added by Northslope" >> ${TEMP_ZSHRC}
+    echo "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" >> ${TEMP_ZSHRC}
+    # Backup the .zshrc file
+    cp ${HOME}/.zshrc ${HOME}/.zshrc.bak
+    # Over write the .zshrc
+    # cat used here in case .zshrc is symlinked
+    cat ${TEMP_ZSHRC} > ${HOME}/.zshrc
+    rm ${TEMP_ZSHRC}
     alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
+    chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
 fi
 print_installed_msg ${TOOL}
 

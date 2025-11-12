@@ -11,7 +11,7 @@ function print_usage {
     echo "   Latest Version: $(get_latest_version)"
 }
 
-northslope_setup_version=`cat ${HOME}/.northslope-setup-version`
+northslope_setup_version=`cat ${HOME}/.northslope/setup-version`
 
 if [[ ! -z $1 ]]; then
     # Prints the help message if any
