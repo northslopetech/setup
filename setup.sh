@@ -77,6 +77,21 @@ function emit_setup_started_event {
         }' > /dev/null 2>&1
 }
 
+function emit_setup_finished_event {
+    curl --silent -XPOST https://us.i.posthog.com/capture/ \
+        --header "Content-Type: application/json" \
+        --data '{
+            "api_key": "'"${POSTHOG_KEY}"'",
+            "event": "setup_finished",
+            "properties": {
+                "distinct_id": "'"${USER}"'",
+                "timezone_offset": "'"${current_timezone}"'",
+                "session_key": "'"${session_key}"'",
+                "timestamp": "'"`get_timestamp`"'"
+            }
+        }' > /dev/null 2>&1
+}
+
 emit_setup_started_event &
 
 NORTHSLOPE_DIR=${HOME}/.northslope
@@ -274,3 +289,5 @@ else
     echo "Northslope Setup Failed! 🚫"
     echo "Please contact @tnguyen and show him your terminal output."
 fi
+
+emit_setup_finished_event &
