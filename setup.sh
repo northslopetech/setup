@@ -203,6 +203,41 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "'gh auth' Authorized ✅"
 
+# Cloning osdk-cli
+NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
+mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
+LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
+TOOL="osdk-cli package"
+print_check_msg ${TOOL}
+if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
+    print_missing_msg ${TOOL}
+    gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}
+    cd ${LOCAL_OSDK_CLI_DIR}
+    # TODO: Switch to origin/latest once the bugfix is put in place
+    git checkout origin/bugfix/allow-npm-install-from-clone
+    cd -
+fi
+print_installed_msg ${TOOL}
+
+# Installing osdk-cli
+TOOL="osdk-cli"
+print_check_msg ${TOOL}
+osdk-cli --help > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    cd ${LOCAL_OSDK_CLI_DIR}
+    pnpm install
+    pnpm build
+    npm link
+    cd -
+fi
+if [[ $? -ne 0 ]]; then
+    print_failed_install_msg ${TOOL}
+else
+    print_installed_msg ${TOOL}
+fi
+
+
 
 echo
 if [[ $DID_FAIL -eq 0 ]]; then
