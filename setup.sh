@@ -1,5 +1,12 @@
 #!/bin/zsh
 
+function gen_uuid {
+    python -c "import uuid; print(str(uuid.uuid4()))"
+}
+
+POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
+session_key=`gen_uuid`
+
 DID_FAIL=0
 
 function get_latest_version {
@@ -53,6 +60,25 @@ function asdf_install_and_set {
     fi
     print_installed_msg ${tool}
 }
+
+function emit_setup_started_event {
+    utc_timestamp=`date --utc --iso-8601`
+    current_timezone=`date "+%z"`
+    curl -XPOST https://us.i.posthog.com/capture/ \
+        --header "Content-Type: application/json" \
+        --data '{
+            "api_key": "'"${POSTHOG_KEY}"'"",
+            "event": "setup_started",
+            "properties": {
+                "user": "'"${USER}"'",
+                "utc_timestamp": "'"${utc_timestamp}"'",
+                "timezone_offset": "'"${current_timezone}"'",
+                "session": "'"${session_key}"'"
+            }
+        }'
+}
+
+emit_setup_started_event
 
 NORTHSLOPE_DIR=${HOME}/.northslope
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
