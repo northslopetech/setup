@@ -77,7 +77,7 @@ function emit_setup_started_event {
         }' > /dev/null 2>&1
 }
 
-emit_setup_started_event
+emit_setup_started_event &
 
 NORTHSLOPE_DIR=${HOME}/.northslope
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
