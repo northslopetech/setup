@@ -6,6 +6,8 @@ function get_latest_version {
     curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | jq -r '.tag_name' | sed 's/\s//g' | sed 's/\n//g'
 }
 
+LATEST_SCRIPT_VERSION=`get_latest_version`
+
 function print_check_msg {
     local tool=$1
     printf "Checking '${tool}'... "
@@ -72,7 +74,8 @@ function emit_setup_started_event {
                 "distinct_id": "'"${USER}"'",
                 "timezone_offset": "'"${current_timezone}"'",
                 "session_key": "'"${session_key}"'",
-                "timestamp": "'"`get_timestamp`"'"
+                "timestamp": "'"`get_timestamp`"'",
+                "latest_version": "'"${LATEST_SCRIPT_VERSION}"'"
             }
         }' > /dev/null 2>&1
 }
@@ -87,7 +90,8 @@ function emit_setup_finished_event {
                 "distinct_id": "'"${USER}"'",
                 "timezone_offset": "'"${current_timezone}"'",
                 "session_key": "'"${session_key}"'",
-                "timestamp": "'"`get_timestamp`"'"
+                "timestamp": "'"`get_timestamp`"'",
+                "latest_version": "'"${LATEST_SCRIPT_VERSION}"'"
             }
         }' > /dev/null 2>&1
 }
@@ -137,7 +141,7 @@ print_check_msg "setup version"
 IS_UPGRADING=0
 if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
     current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
-    if [[ "${current_version}" != "`get_latest_version`" ]]; then
+    if [[ "${current_version}" != "${LATEST_SCRIPT_VERSION}" ]]; then
         echo "Local 'setup' version is out of date. 🚫"
         IS_UPGRADING=1
     else
