@@ -54,12 +54,15 @@ function asdf_install_and_set {
     print_installed_msg ${tool}
 }
 
+function get_timestamp {
+    date -u '+%Y-%m-%dT%H:%M:%SZ'
+}
+
 session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
 POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
+current_timezone=`date "+%z"`
 
 function emit_setup_started_event {
-    timestamp=`date -u '+%Y-%m-%dT%H:%M:%SZ'`
-    current_timezone=`date "+%z"`
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
         --data '{
@@ -69,7 +72,7 @@ function emit_setup_started_event {
                 "distinct_id": "'"${USER}"'",
                 "timezone_offset": "'"${current_timezone}"'",
                 "session_key": "'"${session_key}"'",
-                "timestamp": "'"${timestamp}"'",
+                "timestamp": "'"`get_timestamp`"'"
             }
         }' > /dev/null 2>&1
 }
