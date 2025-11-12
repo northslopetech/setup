@@ -110,7 +110,7 @@ print_installed_msg ${TOOL}
 # Install asdf
 TOOL=asdf
 print_check_msg ${TOOL}
-asdf --help > /dev/null
+asdf --help > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install asdf
@@ -135,6 +135,33 @@ for asdf_tool in ${asdf_tools[@]}; do
     asdf_install_and_set ${tool} ${version}
 done
 asdf reshim
+
+# Ensure logged in with `gh auth`
+print_check_msg "gh auth"
+gh auth status > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    echo "Not authorized. Authenticating..."
+    echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
+    echo "  ⚠️ Answers for the Following Questions ⚠️:"
+    echo ""
+    echo "  1️⃣ Where do you use Github?"
+    echo "       'Github.com'"
+    echo "  2️⃣ What is your preferred protocol for Git operations?"
+    echo "      'SSH'"
+    echo "       If you do have a key already, you can select it"
+    echo "       If you don't have a key, you can generate it with the CLI"
+    echo "           1️⃣ Enter a passphrase for your new SSH key (Optional): 'Leave blank and press enter'"
+    echo "           2️⃣ Title for your SSH key: 'Press enter to use Github CLI default'"
+    echo "  3️⃣ How would you like to authenticate Github CLI? 'Login with a web browser'"
+    echo "       Copy the XXXX-XXXX token that you see in the terminal and press enter to open your browser."
+    echo "          Login to github with the browser window and paste the XXXX-XXXX token into the web page."
+    echo ""
+    echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
+    echo "  ⚠️ See Above for Answers for the Following Questions ⚠️"
+    gh auth login
+fi
+echo "'gh auth' Authorized ✅"
+
 
 echo
 echo "Northslope Setup Complete! ✅"
