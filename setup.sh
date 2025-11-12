@@ -213,7 +213,9 @@ if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
     print_missing_msg ${TOOL}
     gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}
     cd ${LOCAL_OSDK_CLI_DIR}
-    git checkout origin/latest
+    # TODO: Switch to origin/latest once the bugfix is put in place
+    git checkout origin/bugfix/allow-npm-install-from-clone
+    git pull origin
     cd -
 fi
 print_installed_msg ${TOOL}
