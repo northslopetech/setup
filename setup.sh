@@ -215,7 +215,6 @@ if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
     cd ${LOCAL_OSDK_CLI_DIR}
     # TODO: Switch to origin/latest once the bugfix is put in place
     git checkout origin/bugfix/allow-npm-install-from-clone
-    git pull origin
     cd -
 fi
 print_installed_msg ${TOOL}
