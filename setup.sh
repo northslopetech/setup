@@ -212,10 +212,6 @@ print_check_msg ${TOOL}
 if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
     print_missing_msg ${TOOL}
     gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}
-    cd ${LOCAL_OSDK_CLI_DIR}
-    # TODO: Switch to origin/latest once the bugfix is put in place
-    git checkout origin/bugfix/allow-npm-install-from-clone
-    cd -
 fi
 print_installed_msg ${TOOL}
 
@@ -226,6 +222,10 @@ osdk-cli --help > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
     cd ${LOCAL_OSDK_CLI_DIR}
+    git checkout main
+    git fetch --all
+    git checkout origin/latest
+    rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules > /dev/null 2>&1
     pnpm install
     pnpm build
     npm link
