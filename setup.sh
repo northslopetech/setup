@@ -226,7 +226,7 @@ if [[ $? -ne 0 ]]; then
     git fetch --all
     git checkout origin/latest
     rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules > /dev/null 2>&1
-    pnpm install
+    pnpm install --frozen-lockfile
     pnpm build
     npm link
     cd -
