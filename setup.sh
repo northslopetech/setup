@@ -295,3 +295,5 @@ else
     echo "Northslope Setup Failed! 🚫"
     echo "Please contact @tnguyen and show him your terminal output."
 fi
+
+emit_setup_finished_event &
