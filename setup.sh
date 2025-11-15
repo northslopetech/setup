@@ -54,6 +54,50 @@ function asdf_install_and_set {
     print_installed_msg ${tool}
 }
 
+function get_timestamp {
+    date -u '+%Y-%m-%dT%H:%M:%SZ'
+}
+
+session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
+POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
+current_timezone=`date "+%z"`
+
+function emit_setup_started_event {
+    curl --silent -XPOST https://us.i.posthog.com/capture/ \
+        --header "Content-Type: application/json" \
+        --data '{
+            "api_key": "'"${POSTHOG_KEY}"'",
+            "event": "setup:started",
+            "properties": {
+                "distinct_id": "'"${USER}"'",
+                "timezone_offset": "'"${current_timezone}"'",
+                "session_key": "'"${session_key}"'",
+                "timestamp": "'"`get_timestamp`"'",
+                "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
+                "env": "'"${POSTHOG_ENV:-prod}"'"
+            }
+        }' > /dev/null 2>&1
+}
+
+function emit_setup_finished_event {
+    curl --silent -XPOST https://us.i.posthog.com/capture/ \
+        --header "Content-Type: application/json" \
+        --data '{
+            "api_key": "'"${POSTHOG_KEY}"'",
+            "event": "setup:finished",
+            "properties": {
+                "distinct_id": "'"${USER}"'",
+                "timezone_offset": "'"${current_timezone}"'",
+                "session_key": "'"${session_key}"'",
+                "timestamp": "'"`get_timestamp`"'",
+                "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
+                "env": "'"${POSTHOG_ENV:-prod}"'"
+            }
+        }' > /dev/null 2>&1
+}
+
+emit_setup_started_event &
+
 NORTHSLOPE_DIR=${HOME}/.northslope
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
