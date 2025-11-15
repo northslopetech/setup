@@ -63,6 +63,7 @@ POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
 current_timezone=`date "+%z"`
 
 function emit_setup_started_event {
+    local LATEST_SCRIPT_VERSION=`get_latest_version`
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
         --data '{
@@ -80,6 +81,7 @@ function emit_setup_started_event {
 }
 
 function emit_setup_finished_event {
+    local LATEST_SCRIPT_VERSION=`get_latest_version`
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
         --data '{
@@ -293,3 +295,5 @@ else
     echo "Northslope Setup Failed! 🚫"
     echo "Please contact @tnguyen and show him your terminal output."
 fi
+
+emit_setup_finished_event &
