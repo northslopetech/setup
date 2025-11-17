@@ -265,7 +265,10 @@ print_installed_msg ${TOOL}
 TOOL="osdk-cli"
 print_check_msg ${TOOL}
 osdk-cli --help > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+missing_cli=$?
+which osdk-cli | grep ".asdf" > /dev/null 2>&1
+wrong_cli=$?
+if [[ ${missing_cli} -ne 0 || ${wrong_cli} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     cd ${LOCAL_OSDK_CLI_DIR}
     git checkout main
