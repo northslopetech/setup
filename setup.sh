@@ -266,7 +266,7 @@ osdk-cli --help > /dev/null 2>&1
 missing_cli=$?
 which osdk-cli | grep ".asdf" > /dev/null 2>&1
 wrong_cli=$?
-if [[ ${install_cli} -ne 0 || ${wrong_cli} -ne 0 ]]; then
+if [[ ${missing_cli} -ne 0 || ${wrong_cli} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     cd ${LOCAL_OSDK_CLI_DIR}
     git checkout main
