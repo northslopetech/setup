@@ -213,6 +213,7 @@ if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
 fi
+print_installed_msg ${TOOL}
 
 # Install all of the following tools using asdf
 asdf_tools=(
