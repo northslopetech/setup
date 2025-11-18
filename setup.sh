@@ -303,17 +303,6 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "'gh auth' Authorized ✅"
 
-# Cloning osdk-cli
-NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
-mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
-LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
-TOOL="osdk-cli package"
-print_check_msg ${TOOL}
-if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
-    print_missing_msg ${TOOL}
-    gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}
-fi
-print_installed_msg ${TOOL}
 
 # Installing osdk-cli
 TOOL="osdk-cli"
@@ -322,19 +311,13 @@ osdk-cli --help > /dev/null 2>&1
 missing_cli=$?
 which osdk-cli | grep ".asdf" > /dev/null 2>&1
 wrong_cli=$?
+install_status=0
 if [[ ${missing_cli} -ne 0 || ${wrong_cli} -ne 0 ]]; then
     print_missing_msg ${TOOL}
-    cd ${LOCAL_OSDK_CLI_DIR}
-    git checkout main
-    git fetch --all
-    git checkout origin/latest
-    rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules > /dev/null 2>&1
-    pnpm install --frozen-lockfile
-    pnpm build
-    npm link
-    cd -
+    npm install -g @northslopetech/osdk-cli
+    install_status=$?
 fi
-if [[ $? -ne 0 ]]; then
+if [[ ${install_status} -ne 0 ]]; then
     print_failed_install_msg ${TOOL}
 else
     print_installed_msg ${TOOL}
