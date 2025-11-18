@@ -256,10 +256,8 @@ print_check_msg ${TOOL}
 osdk-cli --help > /dev/null 2>&1
 missing_cli=$?
 which osdk-cli | grep ".asdf" > /dev/null 2>&1
-
-install_status=0
-
 wrong_cli=$?
+install_status=0
 if [[ ${missing_cli} -ne 0 || ${wrong_cli} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     npm install -g @northslopetech/osdk-cli
