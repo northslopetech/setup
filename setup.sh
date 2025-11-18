@@ -230,6 +230,15 @@ if [[ $? -ne 0 ]]; then
 fi
 print_installed_msg ${TOOL}
 
+# Install Cursor
+TOOL=cursor
+print_check_msg ${TOOL}
+if [[ ! -d "/Applications/Cursor.app" ]]; then
+    print_missing_msg ${TOOL}
+    brew install --cask cursor
+fi
+print_installed_msg ${TOOL}
+
 # Install asdf
 TOOL=asdf
 print_check_msg ${TOOL}
