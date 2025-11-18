@@ -201,11 +201,19 @@ asdf --help > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install asdf
-    # TODO: Can we force asdf to always override the brew path?
-    echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
 fi
 print_installed_msg ${TOOL}
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
+# Check asdf is in zshrc
+cat ~/.zshrc | grep 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' > /dev/null 2>&1
+TOOL="asdf in .zshrc"
+print_check_msg ${TOOL}
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
+fi
+print_installed_msg ${TOOL}
 
 # Install all of the following tools using asdf
 asdf_tools=(
