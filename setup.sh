@@ -214,6 +214,7 @@ asdf_tools=(
     python__3.13.9
     github-cli__2.83.0
     uv__0.9.7
+    jq__1.8.1
 )
 
 for asdf_tool in ${asdf_tools[@]}; do
