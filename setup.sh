@@ -194,6 +194,42 @@ if [[ $? -ne 0 ]]; then
 fi
 print_installed_msg ${TOOL}
 
+# Check for git config name
+TOOL="git config name"
+print_check_msg ${TOOL}
+git config --global user.name > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    echo "What is your full name?"
+    echo "ex. Tam Nguyen"
+    read git_name
+    git config --global user.name "${git_name}"
+fi
+print_installed_msg ${TOOL}
+
+# Check for git config email
+TOOL="git config email"
+print_check_msg ${TOOL}
+git config --global user.email > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    echo "What is your email address?"
+    echo "ex. test@northslopetech.com"
+    read git_email
+    git config --global user.email "${git_email}"
+fi
+print_installed_msg ${TOOL}
+
+# Check for git config push.autoSetupRemote
+TOOL="git config push.autoSetupRemote"
+print_check_msg ${TOOL}
+git config --global push.autoSetupRemote | grep "true" > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    git config --global push.autoSetupRemote true
+fi
+print_installed_msg ${TOOL}
+
 # Install asdf
 TOOL=asdf
 print_check_msg ${TOOL}
