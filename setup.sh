@@ -203,9 +203,9 @@ if [[ $? -ne 0 ]]; then
     brew install asdf
     # TODO: Can we force asdf to always override the brew path?
     echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
-    export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 fi
 print_installed_msg ${TOOL}
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 # Install all of the following tools using asdf
 asdf_tools=(
