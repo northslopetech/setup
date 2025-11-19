@@ -117,6 +117,7 @@ done
 # Add `setup` command to .zshrc
 TOOL=setup
 print_check_msg ${TOOL}
+touch ~/.zshrc
 cat ~/.zshrc | grep "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
