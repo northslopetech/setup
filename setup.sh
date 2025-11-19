@@ -252,21 +252,14 @@ echo "'gh auth' Authorized ✅"
 
 # Installing osdk-cli
 TOOL="osdk-cli"
-print_check_msg ${TOOL}
-osdk-cli --help > /dev/null 2>&1
-missing_cli=$?
-which osdk-cli | grep ".asdf" > /dev/null 2>&1
-wrong_cli=$?
+print_check_msg "${TOOL}"
 install_status=0
-if [[ ${missing_cli} -ne 0 || ${wrong_cli} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    npm install -g @northslopetech/osdk-cli
-    install_status=$?
-fi
+npm install -g @northslopetech/osdk-cli >/dev/null 2>&1
+install_status=$?
 if [[ ${install_status} -ne 0 ]]; then
-    print_failed_install_msg ${TOOL}
+    print_failed_install_msg "${TOOL}"
 else
-    print_installed_msg ${TOOL}
+    print_installed_msg "${TOOL}"
 fi
 
 
