@@ -239,6 +239,16 @@ if [[ ! -d "/Applications/Cursor.app" ]]; then
 fi
 print_installed_msg ${TOOL}
 
+# Install claude code
+TOOL=claude
+print_check_msg ${TOOL}
+claude --version > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install --cask claude-code
+fi
+print_installed_msg ${TOOL}
+
 # Install asdf
 TOOL=asdf
 print_check_msg ${TOOL}
