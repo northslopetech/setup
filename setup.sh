@@ -178,7 +178,10 @@ chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
 TOOL=brew
 print_check_msg ${TOOL}
 cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+missing=$?
+brew --help > /dev/null 2>&1
+usable=$?
+if [[ ${missing} -ne 0 || ${usable} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
     echo "  ⚠️ Please read the following directions ⚠️"
@@ -190,10 +193,24 @@ if [[ $? -ne 0 ]]; then
     echo "  ⚠️ The following command can take upwards of 10-20 minutes, depending on your internet connection."
     echo "  ⚠️ Please be patient, but if you need to cancel at any time, press Ctrl+C"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zshrc
     eval $(/opt/homebrew/bin/brew shellenv)
 fi
-print_installed_msg ${TOOL}
+
+# Ensure brew shellenv export is in .zshrc if missing
+cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zshrc
+fi
+
+# Verify brew is working after installation
+brew --help > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_failed_install_msg ${TOOL}
+    echo "Cannot go on without brew. Please contact @tnguyen."
+    exit 1
+else
+    print_installed_msg ${TOOL}
+fi
 
 # Check for git config name
 TOOL="git config name"
