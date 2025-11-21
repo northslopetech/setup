@@ -279,9 +279,9 @@ print_installed_msg ${TOOL}
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 # Check asdf is in zshrc
-cat ~/.zshrc | grep 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' > /dev/null 2>&1
 TOOL="asdf in .zshrc"
 print_check_msg ${TOOL}
+cat ~/.zshrc | grep 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
