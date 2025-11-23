@@ -43,7 +43,7 @@ function asdf_install_and_set {
     # No-op if command is installed
     asdf install ${tool} ${version} > /dev/null 2>&1
 
-    check_home_version_set
+    check_home_version_set ${tool}
     if [[ $? -ne 0 ]]; then
         # If a home version is not chosen
         # we choose the default version
