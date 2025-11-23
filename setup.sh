@@ -1,18 +1,6 @@
 #!/bin/zsh
 
-#==============================================================================
-# CONFIGURATION & CONSTANTS
-#==============================================================================
-
 DID_FAIL=0
-session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
-current_timezone=`date "+%z"`
-
-POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
-
-NORTHSLOPE_DIR=${HOME}/.northslope
-NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
-NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
 #==============================================================================
 # UTILITY FUNCTIONS
@@ -51,6 +39,9 @@ function print_missing_msg {
 # ANALYTICS FUNCTIONS
 #==============================================================================
 
+POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
+session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
+current_timezone=`date "+%z"`
 function emit_setup_started_event {
     local LATEST_SCRIPT_VERSION=`get_latest_version`
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
@@ -126,6 +117,7 @@ function asdf_install_and_set {
 # Initialization
 #------------------------------------------------------------------------------
 
+NORTHSLOPE_DIR=${HOME}/.northslope
 emit_setup_started_event &
 
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
@@ -141,6 +133,9 @@ done
 #------------------------------------------------------------------------------
 # Setup Command Installation
 #------------------------------------------------------------------------------
+
+NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
+NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
 # Add `setup` command to .zshrc
 TOOL=setup
