@@ -2,8 +2,16 @@
 
 DID_FAIL=0
 
+#==============================================================================
+# UTILITY FUNCTIONS
+#==============================================================================
+
 function get_latest_version {
     curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | jq -r '.tag_name' | sed 's/\s//g' | sed 's/\n//g'
+}
+
+function get_timestamp {
+    date -u '+%Y-%m-%dT%H:%M:%SZ'
 }
 
 function print_check_msg {
@@ -27,41 +35,13 @@ function print_missing_msg {
     echo "Missing '${tool}'... Installing... "
 }
 
-function check_home_version_set {
-    local tool=$1
-    cat ${HOME}/.tool-versions | grep ${tool} > /dev/null 2>&1
-}
+#==============================================================================
+# ANALYTICS FUNCTIONS
+#==============================================================================
 
-function asdf_install_and_set {
-    local tool=$1
-    local version=$2
-
-    print_check_msg ${tool}
-
-    # No-op if plugin exists
-    asdf plugin add ${tool} > /dev/null 2>&1
-    # No-op if command is installed
-    asdf install ${tool} ${version} > /dev/null 2>&1
-
-    check_home_version_set ${tool}
-    if [[ $? -ne 0 ]]; then
-        # If a home version is not chosen
-        # we choose the default version
-        # TODO: Can we compare versions and
-        # forcibly upgrade if an old one is set?
-        asdf set --home ${tool} ${version}
-    fi
-    print_installed_msg ${tool}
-}
-
-function get_timestamp {
-    date -u '+%Y-%m-%dT%H:%M:%SZ'
-}
-
-session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
 POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
+session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
 current_timezone=`date "+%z"`
-
 function emit_setup_started_event {
     local LATEST_SCRIPT_VERSION=`get_latest_version`
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
@@ -98,13 +78,49 @@ function emit_setup_finished_event {
         }' > /dev/null 2>&1
 }
 
-emit_setup_started_event &
+#==============================================================================
+# INSTALLATION HELPER FUNCTIONS
+#==============================================================================
+
+function check_home_version_set {
+    local tool=$1
+    cat ${HOME}/.tool-versions | grep ${tool} > /dev/null 2>&1
+}
+
+function asdf_install_and_set {
+    local tool=$1
+    local version=$2
+
+    print_check_msg ${tool}
+
+    # No-op if plugin exists
+    asdf plugin add ${tool} > /dev/null 2>&1
+    # No-op if command is installed
+    asdf install ${tool} ${version} > /dev/null 2>&1
+
+    check_home_version_set ${tool}
+    if [[ $? -ne 0 ]]; then
+        # If a home version is not chosen
+        # we choose the default version
+        # TODO: Can we compare versions and
+        # forcibly upgrade if an old one is set?
+        asdf set --home ${tool} ${version}
+    fi
+    print_installed_msg ${tool}
+}
+
+#==============================================================================
+# MAIN EXECUTION FLOW
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# Initialization
+#------------------------------------------------------------------------------
 
 NORTHSLOPE_DIR=${HOME}/.northslope
-mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
+emit_setup_started_event &
 
-NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
-NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
+mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
 # Remove old versions of script and cache
 for f in ${HOME}/.northslope*; do
@@ -113,6 +129,13 @@ for f in ${HOME}/.northslope*; do
     fi
     rm ${f}
 done
+
+#------------------------------------------------------------------------------
+# Setup Command Installation
+#------------------------------------------------------------------------------
+
+NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
+NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
 # Add `setup` command to .zshrc
 TOOL=setup
@@ -139,7 +162,7 @@ if [[ $? -ne 0 ]]; then
 fi
 print_installed_msg ${TOOL}
 
-
+# Check setup version
 print_check_msg "setup version"
 IS_UPGRADING=0
 if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
@@ -154,8 +177,7 @@ else
     echo "No local version set 🚫 "
 fi
 
-# Setup command comes after setup version
-# since setup version will inform setup command
+# Download/upgrade setup command
 TOOL="setup command"
 if [ ${IS_UPGRADING} -eq 0 ]; then
     print_check_msg ${TOOL}
@@ -173,6 +195,10 @@ fi
 print_installed_msg ${TOOL}
 
 chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+
+#------------------------------------------------------------------------------
+# Package Managers
+#------------------------------------------------------------------------------
 
 # Install Brew
 TOOL=brew
@@ -212,6 +238,31 @@ else
     print_installed_msg ${TOOL}
 fi
 
+# Install asdf
+TOOL=asdf
+print_check_msg ${TOOL}
+asdf --help > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install asdf
+fi
+print_installed_msg ${TOOL}
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
+# Check asdf is in zshrc
+TOOL="asdf in .zshrc"
+print_check_msg ${TOOL}
+cat ~/.zshrc | grep 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
+fi
+print_installed_msg ${TOOL}
+
+#------------------------------------------------------------------------------
+# Git Configuration
+#------------------------------------------------------------------------------
+
 # Check for git config name
 TOOL="git config name"
 print_check_msg ${TOOL}
@@ -248,6 +299,10 @@ if [[ $? -ne 0 ]]; then
 fi
 print_installed_msg ${TOOL}
 
+#------------------------------------------------------------------------------
+# Development Tools
+#------------------------------------------------------------------------------
+
 # Install Cursor
 TOOL=cursor
 print_check_msg ${TOOL}
@@ -267,26 +322,9 @@ if [[ $? -ne 0 ]]; then
 fi
 print_installed_msg ${TOOL}
 
-# Install asdf
-TOOL=asdf
-print_check_msg ${TOOL}
-asdf --help > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install asdf
-fi
-print_installed_msg ${TOOL}
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-
-# Check asdf is in zshrc
-TOOL="asdf in .zshrc"
-print_check_msg ${TOOL}
-cat ~/.zshrc | grep 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
-fi
-print_installed_msg ${TOOL}
+#------------------------------------------------------------------------------
+# Programming Languages & Tools (via asdf)
+#------------------------------------------------------------------------------
 
 # Install all of the following tools using asdf
 asdf_tools=(
@@ -304,6 +342,10 @@ for asdf_tool in ${asdf_tools[@]}; do
     asdf_install_and_set ${tool} ${version}
 done
 asdf reshim
+
+#------------------------------------------------------------------------------
+# Authentication
+#------------------------------------------------------------------------------
 
 # Ensure logged in with `gh auth`
 print_check_msg "gh auth"
@@ -331,6 +373,9 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "'gh auth' Authorized ✅"
 
+#------------------------------------------------------------------------------
+# Northslope Tools
+#------------------------------------------------------------------------------
 
 # Installing osdk-cli
 TOOL="osdk-cli"
@@ -344,7 +389,9 @@ else
     print_installed_msg "${TOOL}"
 fi
 
-
+#------------------------------------------------------------------------------
+# Finalization
+#------------------------------------------------------------------------------
 
 echo
 if [[ $DID_FAIL -eq 0 ]]; then
