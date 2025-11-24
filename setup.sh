@@ -251,7 +251,13 @@ function emit_setup_finished_event {
 
 function check_home_version_set {
     local tool=$1
-    cat ${HOME}/.tool-versions | grep ${tool} > /dev/null 2>&1
+    local version=$2
+    tool_version=`cat ${HOME}/.tool-versions | grep ${tool} | cut -d' ' -f2`
+    if [[ "${tool_version}" == "${version}" ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 function asdf_install_and_set {
@@ -285,7 +291,7 @@ function asdf_install_and_set {
         return 1
     fi
 
-    check_home_version_set ${tool}
+    check_home_version_set ${tool} ${version}
     if [[ $? -ne 0 ]]; then
         # If a home version is not chosen
         # we choose the default version
