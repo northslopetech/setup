@@ -300,7 +300,7 @@ function asdf_install_and_set {
     fi
 
     # Check if it was already installed before we ran install
-    if [[ ${already_installed} -eq 0 ]]; then
+    if [[ ${already_installed} -ne 0 ]]; then
         print_installed_msg "${tool}" true "asdf" "${version}"
     else
         print_installed_msg "${tool}" false "asdf" "${version}"
