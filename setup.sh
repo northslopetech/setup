@@ -65,7 +65,7 @@ function print_and_record_already_installed_msg {
 
 function print_and_record_newly_installed_msg {
     local tool=$1
-    local version=$2
+    local version=${2:-""}
     local installer=${3:-"manual"}
     echo "'${tool}' Freshly Installed ✨"
 
