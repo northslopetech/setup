@@ -252,7 +252,8 @@ function emit_setup_finished_event {
 function check_home_version_set {
     local tool=$1
     local version=$2
-    tool_version=`cat ${HOME}/.tool-versions | grep ${tool} | cut -d' ' -f2`
+    # Use anchored grep to match only lines starting with the tool name followed by a space
+    tool_version=`cat ${HOME}/.tool-versions | grep "^${tool} " | cut -d' ' -f2`
     if [[ "${tool_version}" == "${version}" ]]; then
         return 0
     else
