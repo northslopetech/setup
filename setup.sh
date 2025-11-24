@@ -604,7 +604,7 @@ else
         echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
         print_and_record_newly_installed_msg "${TOOL}"
     else
-        print_installed_msg "${TOOL}" false "manual" ""
+        print_and_record_already_installed_msg "${TOOL}"
     fi
 fi
 
