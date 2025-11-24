@@ -131,7 +131,7 @@ function emit_failure_event {
                 "$exception_type": "InstallationError",
                 "$exception_message": "'"${escaped_error_msg}"'",
                 "$exception_level": "error",
-                "$exception_fingerprint": ["setup-installation-failure", "'"${escaped_tool}"'"],
+                "$exception_fingerprint": "setup-installation-failure-'"${escaped_tool}"'-'"${session_key}"'",
                 "tool": "'"${escaped_tool}"'",
                 "exit_code": '"${exit_code}"',
                 "session_key": "'"${session_key}"'",
