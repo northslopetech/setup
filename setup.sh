@@ -657,7 +657,6 @@ if [[ ${GH_AUTH_ALREADY_SET} -ne 0 ]]; then
     GH_VERSION=$(gh --version 2>/dev/null | head -1 | awk '{print $3}' || echo "")
     if [[ ${gh_auth_status} -eq 0 ]]; then
         echo "'gh auth' Authorized ✅"
-        record_tool_result "${TOOL}" "installed" "" "0" "system" "${GH_VERSION}"
         print_and_record_newly_installed_msg ${TOOL} ${GH_VERSION} "gh"
     else
         print_failed_install_msg "${TOOL}" "gh auth login failed or was interrupted" ${gh_auth_status} "system" "${GH_VERSION}"
