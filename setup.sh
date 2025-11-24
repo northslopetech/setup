@@ -127,6 +127,7 @@ function emit_failure_event {
             "event": "$exception",
             "properties": {
                 "distinct_id": "'"${USER}"'",
+                "user": "'"${USER}"'",
                 "timestamp": "'"${timestamp}"'",
                 "$exception_type": "InstallationError",
                 "$exception_message": "'"${escaped_error_msg}"'",
@@ -151,6 +152,7 @@ function emit_setup_started_event {
             "event": "setup:started",
             "properties": {
                 "distinct_id": "'"${USER}"'",
+                "user": "'"${USER}"'",
                 "timezone_offset": "'"${current_timezone}"'",
                 "session_key": "'"${session_key}"'",
                 "timestamp": "'"`get_timestamp`"'",
@@ -209,6 +211,7 @@ function emit_setup_finished_event {
             "event": "setup:finished",
             "properties": {
                 "distinct_id": "'"${USER}"'",
+                "user": "'"${USER}"'",
                 "timezone_offset": "'"${current_timezone}"'",
                 "session_key": "'"${session_key}"'",
                 "timestamp": "'"`get_timestamp`"'",
