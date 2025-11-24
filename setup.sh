@@ -567,7 +567,7 @@ asdf_tools=(
     pnpm__10.20.0
     python__3.13.9
     github-cli__2.83.0
-    uv__1.9.7
+    uv__0.9.7
     jq__1.8.1
 )
 
