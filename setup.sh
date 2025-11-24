@@ -74,7 +74,7 @@ function print_and_record_already_installed_msg {
 
 function print_and_record_newly_installed_msg {
     local tool=$1
-    local version=$2
+    local version=${2:-""}
     local installer=${3:-"manual"}
     echo "'${tool}' Freshly Installed ✨"
 
@@ -580,10 +580,10 @@ if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install --cask claude-code
     CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_newly_installed_msg ${TOOL} ${CURSOR_VERSION} "brew"
+    print_and_record_newly_installed_msg ${TOOL} ${CLAUDE_VERSION} "brew"
 else
     CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${CURSOR_VERSION} "brew"
+    print_and_record_already_installed_msg ${TOOL} ${CLAUDE_VERSION} "brew"
 fi
 
 #------------------------------------------------------------------------------
@@ -666,7 +666,6 @@ if [[ ${GH_AUTH_ALREADY_SET} -ne 0 ]]; then
     GH_VERSION=$(gh --version 2>/dev/null | head -1 | awk '{print $3}' || echo "")
     if [[ ${gh_auth_status} -eq 0 ]]; then
         echo "'gh auth' Authorized ✅"
-        record_tool_result "${TOOL}" "installed" "" "0" "system" "${GH_VERSION}"
         print_and_record_newly_installed_msg ${TOOL} ${GH_VERSION} "gh"
     else
         print_failed_install_msg "${TOOL}" "gh auth login failed or was interrupted" ${gh_auth_status} "system" "${GH_VERSION}"
