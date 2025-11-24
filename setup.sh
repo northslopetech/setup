@@ -569,6 +569,7 @@ asdf_tools=(
     github-cli__2.83.0
     uv__1.9.7
     jq__1.8.1
+    java__openjdk-17.0.2
 )
 
 for asdf_tool in ${asdf_tools[@]}; do
