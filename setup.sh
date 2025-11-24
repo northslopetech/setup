@@ -279,6 +279,7 @@ asdf_tools=(
     github-cli__2.83.0
     uv__0.9.7
     jq__1.8.1
+    direnv__2.37.1
 )
 
 for asdf_tool in ${asdf_tools[@]}; do
@@ -287,6 +288,9 @@ for asdf_tool in ${asdf_tools[@]}; do
     asdf_install_and_set ${tool} ${version}
 done
 asdf reshim
+
+# Set up direnv to be hooked into zsh
+echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
 
 # Ensure logged in with `gh auth`
 print_check_msg "gh auth"
