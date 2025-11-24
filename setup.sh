@@ -571,10 +571,10 @@ if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install --cask claude-code
     CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_newly_installed_msg ${TOOL} ${CURSOR_VERSION} "brew"
+    print_and_record_newly_installed_msg ${TOOL} ${CLAUDE_VERSION} "brew"
 else
     CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${CURSOR_VERSION} "brew"
+    print_and_record_already_installed_msg ${TOOL} ${CLAUDE_VERSION} "brew"
 fi
 
 #------------------------------------------------------------------------------
