@@ -377,6 +377,8 @@ if [[ ${SETUP_ALREADY_INSTALLED} -ne 0 ]]; then
     rm ${TEMP_ZSHRC}
     alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
     print_and_record_newly_installed_msg ${TOOL}
 else
     IS_UPGRADING=1
