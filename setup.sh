@@ -54,6 +54,15 @@ function print_failed_install_msg {
     capture_failure "${tool}" "${error_msg}" "${exit_code}" "${installer}" "${version}"
 }
 
+function print_and_record_upgraded_msg {
+    local tool=$1
+    local version=${2:-""}
+    local installer=${3:-"manual"}
+    echo "'${tool}' Upgraded to ${version} 🔥"
+
+    record_tool_result "${tool}" "upgraded" "" "0" "${installer}" "${version}"
+}
+
 function print_and_record_already_installed_msg {
     local tool=$1
     local version=${2:-""}
@@ -618,7 +627,7 @@ if [[ ${DIRENV_INSTALLED} -ne 0 ]]; then
 else
     if [[ ${DIRENV_HOOK_IS_SETUP} -ne 0 ]]; then
         echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
-        print_installed_msg "${TOOL}" true "manual" ""
+        print_and_record_newly_installed_msg "${TOOL}"
     else
         print_installed_msg "${TOOL}" false "manual" ""
     fi
@@ -675,20 +684,28 @@ fi
 TOOL="osdk-cli"
 print_check_msg "${TOOL}"
 # Check if osdk-cli is already installed
-osdk --version > /dev/null 2>&1
+osdk-cli --version > /dev/null 2>&1
 OSDK_ALREADY_INSTALLED=$?
+CURR_OSDK_VERSION=""
 if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
-    OSDK_VERSION=$(osdk --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${OSDK_VERSION} "npm"
-else
-    install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
-    install_status=$?
-    if [[ ${install_status} -ne 0 ]]; then
-        print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
+    CURR_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+fi
+
+install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
+install_status=$?
+if [[ ${install_status} -eq 0 ]]; then
+    NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+    if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
+        if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
+            print_and_record_upgraded_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+        else
+            print_and_record_already_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+        fi
     else
-        OSDK_VERSION=$(osdk --version 2>/dev/null | awk '{print $1}' || echo "")
-        print_and_record_newly_installed_msg ${TOOL} ${OSDK_VERSION} "npm"
+        print_and_record_newly_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
     fi
+else
+    print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
 fi
 
 #------------------------------------------------------------------------------
