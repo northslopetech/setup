@@ -588,14 +588,23 @@ done
 asdf reshim
 
 # Set up direnv to be hooked into zsh
-cat ~/.zshrc | grep "eval \"(direnv hook zsh)\"" > /dev/null 2>&1
-DIRENV_ZSHRC_ALREADY_CONFIGURED=$?
-if [[ ${DIRENV_ZSHRC_ALREADY_CONFIGURED} -ne 0 ]]; then
-    echo "Adding direnv hook to .zshrc..."
-    echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
-    echo "Direnv hook added to .zshrc ✅"
+direnv version > /dev/null 2>&1
+DIRENV_INSTALLED_PROPERLY=$?
+
+if [[ ${DIRENV_INSTALLED_PROPERLY} -ne 0 ]]; then
+    echo "direnv command not available - cannot add hook"
 else
-    echo "Direnv hook already configured in .zshrc ✅"
+    # Check if hook is already configured
+    cat ~/.zshrc | grep "eval \"(direnv hook zsh)\"" > /dev/null 2>&1
+    DIRENV_ZSHRC_ALREADY_CONFIGURED=$?
+
+    if [[ ${DIRENV_ZSHRC_ALREADY_CONFIGURED} -ne 0 ]]; then
+        echo "direnv hook not configured - configuring..."
+        echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
+        echo "direnv hook configured ✅"
+    else
+        echo "direnv hook already configured ✅"
+    fi
 fi
 
 #------------------------------------------------------------------------------
