@@ -136,9 +136,9 @@ function emit_failure_event {
     local timestamp=$4
     local LATEST_SCRIPT_VERSION=`get_latest_version`
 
-    # Escape error message for JSON
-    local escaped_error_msg=$(echo "${error_msg}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr -d '\n' | tr -d '\r')
-    local escaped_tool=$(echo "${tool}" | sed 's/"/\\"/g')
+    # Escape error message for JSON (backslashes first, then quotes)
+    local escaped_error_msg=$(echo "${error_msg}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
+    local escaped_tool=$(echo "${tool}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
     # Build exception list
     local exception_list="[{\"type\":\"SetupFailure:${escaped_tool}\",\"value\":\"${escaped_error_msg}\",\"mechanism\":{\"type\":\"shell_script\",\"handled\":false},\"module\":\"${escaped_tool}\"}]"
@@ -205,11 +205,11 @@ function emit_setup_finished_event {
     local tools_json="{"
     local sep=""
     for i in {1..${#TOOL_NAMES[@]}}; do
-        # Escape strings for JSON
-        local escaped_name=$(echo "${TOOL_NAMES[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g')
-        local escaped_msg=$(echo "${TOOL_MESSAGES[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr -d '\n' | tr -d '\r')
-        local escaped_installer=$(echo "${TOOL_INSTALLERS[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g')
-        local escaped_version=$(echo "${TOOL_VERSIONS[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g')
+        # Escape strings for JSON (backslashes first, then quotes)
+        local escaped_name=$(echo "${TOOL_NAMES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+        local escaped_msg=$(echo "${TOOL_MESSAGES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
+        local escaped_installer=$(echo "${TOOL_INSTALLERS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+        local escaped_version=$(echo "${TOOL_VERSIONS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
         tools_json+="${sep}\"${escaped_name}\": {\"tool\":\"${escaped_name}\",\"status\":\"${TOOL_STATUSES[$i]}\",\"installer\":\"${escaped_installer}\",\"version\":\"${escaped_version}\",\"message\":\"${escaped_msg}\",\"exit_code\":${TOOL_EXIT_CODES[$i]},\"timestamp\":\"${TOOL_TIMESTAMPS[$i]}\"}"
 
