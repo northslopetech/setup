@@ -120,6 +120,9 @@ function emit_failure_event {
     local escaped_error_msg=$(echo "${error_msg}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr -d '\n' | tr -d '\r')
     local escaped_tool=$(echo "${tool}" | sed 's/"/\\"/g')
 
+    # Build exception list
+    local exception_list="[{\"type\":\"SetupFailure:${escaped_tool}\",\"value\":\"${escaped_error_msg}\",\"mechanism\":{\"type\":\"shell_script\",\"handled\":false},\"module\":\"${escaped_tool}\"}]"
+
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
         --data '{
@@ -132,6 +135,7 @@ function emit_failure_event {
                 "$exception_type": "InstallationError",
                 "$exception_message": "'"${escaped_error_msg}"'",
                 "$exception_level": "error",
+                "$exception_list": '"${exception_list}"',
                 "$exception_fingerprint": "setup-installation-failure-'"${escaped_tool}"'-'"${session_key}"'",
                 "tool": "'"${escaped_tool}"'",
                 "exit_code": '"${exit_code}"',
