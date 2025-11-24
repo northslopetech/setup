@@ -1,6 +1,21 @@
 #!/bin/zsh
 
-DID_FAIL=0
+#==============================================================================
+# CONFIGURATION & CONSTANTS
+#==============================================================================
+
+# Comprehensive tool result tracking
+TOOL_NAMES=()
+TOOL_STATUSES=()        # "already_installed", "installed", "failed"
+TOOL_MESSAGES=()        # Additional context (error message, version, etc.)
+TOOL_EXIT_CODES=()      # Exit code (relevant for failures)
+TOOL_TIMESTAMPS=()      # ISO 8601 timestamp
+
+# Failure tracking arrays (for finalization summary)
+FAILED_TOOLS=()
+FAILURE_MESSAGES=()
+FAILURE_CODES=()
+FAILURE_TIMESTAMPS=()
 
 #==============================================================================
 # UTILITY FUNCTIONS
@@ -10,7 +25,7 @@ CACHED_LATEST_VERSION=""
 
 function get_latest_version {
     if [[ -z "${CACHED_LATEST_VERSION}" ]]; then
-        CACHED_LATEST_VERSION=$(curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | grep tag_name | awk -F'"' '{ print $4 }')
+        CACHED_LATEST_VERSION=$(curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | grep tag_name | awk -F'"' '{ print $4 }' | sed 's/ //g')
     fi
     echo "${CACHED_LATEST_VERSION}"
 }
@@ -26,18 +41,64 @@ function print_check_msg {
 
 function print_failed_install_msg {
     local tool=$1
+    local error_msg=${2:-"Installation failed"}
+    local exit_code=${3:-1}
+
     echo "'${tool}' Not Installed 🚫"
-    DID_FAIL=1
+    echo "  Error: ${error_msg}"
+
+    capture_failure "${tool}" "${error_msg}" "${exit_code}"
 }
 
 function print_installed_msg {
     local tool=$1
+    local was_already_installed=${2:-false}  # true if already installed, false if newly installed
+
     echo "'${tool}' Installed ✅"
+
+    # Record in comprehensive tracking
+    if [[ "${was_already_installed}" == "true" ]]; then
+        record_tool_result "${tool}" "already_installed" ""
+    else
+        record_tool_result "${tool}" "installed" ""
+    fi
 }
 
 function print_missing_msg {
     local tool=$1
     echo "Missing '${tool}'... Installing... "
+}
+
+function capture_failure {
+    local tool=$1
+    local error_msg=$2
+    local exit_code=${3:-1}
+    local timestamp=`get_timestamp`
+
+    FAILED_TOOLS+=("${tool}")
+    FAILURE_MESSAGES+=("${error_msg}")
+    FAILURE_CODES+=("${exit_code}")
+    FAILURE_TIMESTAMPS+=("${timestamp}")
+
+    # Record in comprehensive tracking
+    record_tool_result "${tool}" "failed" "${error_msg}" "${exit_code}"
+
+    # Emit individual failure event to PostHog
+    emit_failure_event "${tool}" "${error_msg}" "${exit_code}" "${timestamp}" &
+}
+
+function record_tool_result {
+    local tool=$1
+    local tool_status=$2      # "already_installed", "installed", "failed"
+    local message=${3:-""}    # Optional message
+    local exit_code=${4:-0}   # Exit code (default 0)
+    local timestamp=`get_timestamp`
+
+    TOOL_NAMES+=("${tool}")
+    TOOL_STATUSES+=("${tool_status}")
+    TOOL_MESSAGES+=("${message}")
+    TOOL_EXIT_CODES+=("${exit_code}")
+    TOOL_TIMESTAMPS+=("${timestamp}")
 }
 
 #==============================================================================
@@ -47,6 +108,40 @@ function print_missing_msg {
 POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
 session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
 current_timezone=`date "+%z"`
+
+function emit_failure_event {
+    local tool=$1
+    local error_msg=$2
+    local exit_code=$3
+    local timestamp=$4
+    local LATEST_SCRIPT_VERSION=`get_latest_version`
+
+    # Escape error message for JSON
+    local escaped_error_msg=$(echo "${error_msg}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr -d '\n' | tr -d '\r')
+    local escaped_tool=$(echo "${tool}" | sed 's/"/\\"/g')
+
+    curl --silent -XPOST https://us.i.posthog.com/capture/ \
+        --header "Content-Type: application/json" \
+        --data '{
+            "api_key": "'"${POSTHOG_KEY}"'",
+            "event": "$exception",
+            "properties": {
+                "distinct_id": "'"${USER}"'",
+                "timestamp": "'"${timestamp}"'",
+                "$exception_type": "InstallationError",
+                "$exception_message": "'"${escaped_error_msg}"'",
+                "$exception_level": "error",
+                "$exception_fingerprint": ["setup-installation-failure", "'"${escaped_tool}"'"],
+                "tool": "'"${escaped_tool}"'",
+                "exit_code": '"${exit_code}"',
+                "session_key": "'"${session_key}"'",
+                "timezone_offset": "'"${current_timezone}"'",
+                "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
+                "env": "'"${POSTHOG_ENV:-prod}"'"
+            }
+        }' > /dev/null 2>&1
+}
+
 function emit_setup_started_event {
     local LATEST_SCRIPT_VERSION=`get_latest_version`
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
@@ -67,6 +162,46 @@ function emit_setup_started_event {
 
 function emit_setup_finished_event {
     local LATEST_SCRIPT_VERSION=`get_latest_version`
+    local success="true"
+    if [[ ${#FAILED_TOOLS[@]} -gt 0 ]]; then
+        success="false"
+    fi
+
+    # Build complete results JSON object
+    local results_json="{"
+
+    # Count each status type
+    local already_installed_count=0
+    local installed_count=0
+    local failed_count=0
+
+    # Build tools array
+    local tools_json="["
+    local first=true
+    for i in {1..${#TOOL_NAMES[@]}}; do
+        if [[ "$first" == "false" ]]; then
+            tools_json+=","
+        fi
+        first=false
+
+        # Escape strings for JSON
+        local escaped_name=$(echo "${TOOL_NAMES[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g')
+        local escaped_msg=$(echo "${TOOL_MESSAGES[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr -d '\n' | tr -d '\r')
+
+        tools_json+="{\"tool\":\"${escaped_name}\",\"status\":\"${TOOL_STATUSES[$i]}\",\"message\":\"${escaped_msg}\",\"exit_code\":${TOOL_EXIT_CODES[$i]},\"timestamp\":\"${TOOL_TIMESTAMPS[$i]}\"}"
+
+        # Count status types
+        case "${TOOL_STATUSES[$i]}" in
+            "already_installed") ((already_installed_count++)) ;;
+            "installed") ((installed_count++)) ;;
+            "failed") ((failed_count++)) ;;
+        esac
+    done
+    tools_json+="]"
+
+    results_json+="\"tools\":${tools_json},\"summary\":{\"already_installed\":${already_installed_count},\"installed\":${installed_count},\"failed\":${failed_count},\"total\":${#TOOL_NAMES[@]}}"
+    results_json+="}"
+
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
         --data '{
@@ -78,7 +213,9 @@ function emit_setup_finished_event {
                 "session_key": "'"${session_key}"'",
                 "timestamp": "'"`get_timestamp`"'",
                 "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
-                "env": "'"${POSTHOG_ENV:-prod}"'"
+                "env": "'"${POSTHOG_ENV:-prod}"'",
+                "success": '"${success}"',
+                "results": '"${results_json}"'
             }
         }' > /dev/null 2>&1
 }
@@ -98,10 +235,30 @@ function asdf_install_and_set {
 
     print_check_msg ${tool}
 
+    # Check if tool is already installed at the requested version
+    asdf list ${tool} ${version} 2>&1 | grep "No compatible versions installed" > /dev/null 2>&1
+    local already_installed=$?
+
     # No-op if plugin exists
-    asdf plugin add ${tool} > /dev/null 2>&1
+    plugin_output=$(asdf plugin add ${tool} 2>&1)
+    plugin_status=$?
+
     # No-op if command is installed
-    asdf install ${tool} ${version} > /dev/null 2>&1
+    install_output=$(asdf install ${tool} ${version} 2>&1)
+    install_status=$?
+
+    # Check if installation was successful
+    if [[ ${install_status} -ne 0 ]]; then
+        # Check if it was already installed (exit code 0 means success, which means not installed)
+        if [[ ${already_installed} -ne 0 ]]; then
+            # Was already installed, just continue
+            print_installed_msg "${tool}" true
+            return 0
+        fi
+        # Installation failed
+        print_failed_install_msg "${tool} ${version}" "asdf install failed: ${install_output}" ${install_status}
+        return 1
+    fi
 
     check_home_version_set ${tool}
     if [[ $? -ne 0 ]]; then
@@ -109,9 +266,20 @@ function asdf_install_and_set {
         # we choose the default version
         # TODO: Can we compare versions and
         # forcibly upgrade if an old one is set?
-        asdf set --home ${tool} ${version}
+        set_output=$(asdf set --home ${tool} ${version} 2>&1)
+        set_status=$?
+        if [[ ${set_status} -ne 0 ]]; then
+            print_failed_install_msg "${tool} ${version}" "asdf set --home failed: ${set_output}" ${set_status}
+            return 1
+        fi
     fi
-    print_installed_msg ${tool}
+
+    # Check if it was already installed before we ran install
+    if [[ ${already_installed} -eq 0 ]]; then
+        print_installed_msg "${tool}" true
+    else
+        print_installed_msg "${tool}" false
+    fi
 }
 
 #==============================================================================
@@ -147,7 +315,8 @@ TOOL=setup
 print_check_msg ${TOOL}
 touch ~/.zshrc
 cat ~/.zshrc | grep "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+SETUP_ALREADY_INSTALLED=$?
+if [[ ${SETUP_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     # Remove old setup alias
     TEMP_ZSHRC=${NORTHSLOPE_DIR}/temp-zshrc
@@ -164,8 +333,10 @@ if [[ $? -ne 0 ]]; then
     rm ${TEMP_ZSHRC}
     alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 
 # Check setup version
 print_check_msg "setup version"
@@ -173,7 +344,7 @@ IS_UPGRADING=0
 if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
     current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
     if [[ "${current_version}" != "`get_latest_version`" ]]; then
-        echo "Local 'setup' version is out of date. 🚫"
+        echo "Local 'setup' version is out of date. Local(${current_version}) != Remote(`get_latest_version`). 🚫"
         IS_UPGRADING=1
     else
         echo "Version is up to date: ${current_version} ✅"
@@ -184,10 +355,12 @@ fi
 
 # Download/upgrade setup command
 TOOL="setup command"
+SETUP_CMD_ALREADY_INSTALLED=true
 if [ ${IS_UPGRADING} -eq 0 ]; then
     print_check_msg ${TOOL}
 fi
 if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ${IS_UPGRADING} -eq 1 ]]; then
+    SETUP_CMD_ALREADY_INSTALLED=false
     if [ ${IS_UPGRADING} -eq 0 ]; then
         # Show only if we are not upgrading
         print_missing_msg ${TOOL}
@@ -197,7 +370,7 @@ if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VER
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
 fi
-print_installed_msg ${TOOL}
+print_installed_msg ${TOOL} ${SETUP_CMD_ALREADY_INSTALLED}
 
 chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
 
@@ -212,7 +385,9 @@ cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
 missing=$?
 brew --help > /dev/null 2>&1
 usable=$?
+BREW_ALREADY_INSTALLED=true
 if [[ ${missing} -ne 0 || ${usable} -ne 0 ]]; then
+    BREW_ALREADY_INSTALLED=false
     print_missing_msg ${TOOL}
     echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
     echo "  ⚠️ Please read the following directions ⚠️"
@@ -234,35 +409,42 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Verify brew is working after installation
-brew --help > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    print_failed_install_msg ${TOOL}
+brew_error=$(brew --help 2>&1)
+brew_exit_code=$?
+if [[ ${brew_exit_code} -ne 0 ]]; then
+    print_failed_install_msg ${TOOL} "Brew installation failed or is not in PATH: ${brew_error}" ${brew_exit_code}
     echo "Cannot go on without brew. Please contact @tnguyen."
     exit 1
 else
-    print_installed_msg ${TOOL}
+    print_installed_msg ${TOOL} ${BREW_ALREADY_INSTALLED}
 fi
 
 # Install asdf
 TOOL=asdf
 print_check_msg ${TOOL}
 asdf --help > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+ASDF_ALREADY_INSTALLED=$?
+if [[ ${ASDF_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install asdf
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 # Check asdf is in zshrc
 TOOL="asdf in .zshrc"
 print_check_msg ${TOOL}
 cat ~/.zshrc | grep 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+ASDF_ZSHRC_ALREADY_INSTALLED=$?
+if [[ ${ASDF_ZSHRC_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 
 #------------------------------------------------------------------------------
 # Git Configuration
@@ -272,37 +454,46 @@ print_installed_msg ${TOOL}
 TOOL="git config name"
 print_check_msg ${TOOL}
 git config --global user.name > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+GIT_NAME_ALREADY_SET=$?
+if [[ ${GIT_NAME_ALREADY_SET} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo "What is your full name?"
     echo "ex. Tam Nguyen"
     read git_name
     git config --global user.name "${git_name}"
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 
 # Check for git config email
 TOOL="git config email"
 print_check_msg ${TOOL}
 git config --global user.email > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+GIT_EMAIL_ALREADY_SET=$?
+if [[ ${GIT_EMAIL_ALREADY_SET} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo "What is your email address?"
     echo "ex. test@northslopetech.com"
     read git_email
     git config --global user.email "${git_email}"
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 
 # Check for git config push.autoSetupRemote
 TOOL="git config push.autoSetupRemote"
 print_check_msg ${TOOL}
 git config --global push.autoSetupRemote | grep "true" > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+GIT_PUSH_ALREADY_SET=$?
+if [[ ${GIT_PUSH_ALREADY_SET} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     git config --global push.autoSetupRemote true
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 
 #------------------------------------------------------------------------------
 # Development Tools
@@ -314,18 +505,23 @@ print_check_msg ${TOOL}
 if [[ ! -d "/Applications/Cursor.app" ]]; then
     print_missing_msg ${TOOL}
     brew install --cask cursor
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 
 # Install claude code
 TOOL=claude
 print_check_msg ${TOOL}
 claude --version > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+CLAUDE_ALREADY_INSTALLED=$?
+if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install --cask claude-code
+    print_installed_msg ${TOOL} false
+else
+    print_installed_msg ${TOOL} true
 fi
-print_installed_msg ${TOOL}
 
 #------------------------------------------------------------------------------
 # Programming Languages & Tools (via asdf)
@@ -337,8 +533,8 @@ asdf_tools=(
     pnpm__10.20.0
     python__3.13.9
     github-cli__2.83.0
-    uv__0.9.7
-    jq__1.8.1
+    uv__1.9.7
+    jq__1.8.2
 )
 
 for asdf_tool in ${asdf_tools[@]}; do
@@ -353,9 +549,11 @@ asdf reshim
 #------------------------------------------------------------------------------
 
 # Ensure logged in with `gh auth`
-print_check_msg "gh auth"
+TOOL="gh auth"
+print_check_msg "${TOOL}"
 gh auth status > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+GH_AUTH_ALREADY_SET=$?
+if [[ ${GH_AUTH_ALREADY_SET} -ne 0 ]]; then
     echo "Not authorized. Authenticating..."
     echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
     echo "  ⚠️ Answers for the Following Questions ⚠️:"
@@ -375,8 +573,17 @@ if [[ $? -ne 0 ]]; then
     echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
     echo "  ⚠️ See Above for Answers for the Following Questions ⚠️"
     gh auth login
+    gh_auth_status=$?
+    if [[ ${gh_auth_status} -eq 0 ]]; then
+        echo "'gh auth' Authorized ✅"
+        record_tool_result "${TOOL}" "installed" ""
+    else
+        print_failed_install_msg "${TOOL}" "gh auth login failed or was interrupted" ${gh_auth_status}
+    fi
+else
+    echo "'gh auth' Authorized ✅"
+    record_tool_result "${TOOL}" "already_installed" ""
 fi
-echo "'gh auth' Authorized ✅"
 
 #------------------------------------------------------------------------------
 # Northslope Tools
@@ -385,13 +592,19 @@ echo "'gh auth' Authorized ✅"
 # Installing osdk-cli
 TOOL="osdk-cli"
 print_check_msg "${TOOL}"
-install_status=0
-npm install -g @northslopetech/osdk-cli >/dev/null 2>&1
-install_status=$?
-if [[ ${install_status} -ne 0 ]]; then
-    print_failed_install_msg "${TOOL}"
+# Check if osdk-cli is already installed
+osdk --version > /dev/null 2>&1
+OSDK_ALREADY_INSTALLED=$?
+if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
+    print_installed_msg "${TOOL}" true
 else
-    print_installed_msg "${TOOL}"
+    install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
+    install_status=$?
+    if [[ ${install_status} -ne 0 ]]; then
+        print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status}
+    else
+        print_installed_msg "${TOOL}" false
+    fi
 fi
 
 #------------------------------------------------------------------------------
@@ -399,13 +612,25 @@ fi
 #------------------------------------------------------------------------------
 
 echo
-if [[ $DID_FAIL -eq 0 ]]; then
+if [[ ${#FAILED_TOOLS[@]} -eq 0 ]]; then
     echo "Northslope Setup Complete! ✅"
     echo
     echo "Run 'setup' in the future to get the latest and greatest tools"
     echo "Please close and reopen your terminal to continue..."
 else
     echo "Northslope Setup Failed! 🚫"
+    echo
+    echo "The following tools failed to install:"
+    echo "========================================="
+    for i in {1..${#FAILED_TOOLS[@]}}; do
+        echo
+        echo "🚫 ${FAILED_TOOLS[$i]}"
+        echo "   Error: ${FAILURE_MESSAGES[$i]}"
+        echo "   Exit Code: ${FAILURE_CODES[$i]}"
+        echo "   Time: ${FAILURE_TIMESTAMPS[$i]}"
+    done
+    echo
+    echo "========================================="
     echo "Please contact @tnguyen and show him your terminal output."
 fi
 
