@@ -122,6 +122,38 @@ function record_tool_result {
 }
 
 #==============================================================================
+# PARALLEL EXECUTION HELPERS
+#==============================================================================
+
+# Runs a function in background and captures output to a buffer
+function run_buffered {
+    local buffer_file=$1
+    local func_name=$2
+    shift 2
+
+    # Run function and redirect all output to buffer file
+    ${func_name} "$@" > "${buffer_file}" 2>&1
+    echo $? > "${buffer_file}.exitcode"
+}
+
+# Waits for all background jobs and prints their outputs in order
+function wait_and_print_buffered {
+    local buffer_dir=$1
+    shift
+    local buffer_files=("$@")
+
+    # Wait for all background jobs to complete
+    wait
+
+    # Print outputs in the order specified
+    for buffer_file in "${buffer_files[@]}"; do
+        if [[ -f "${buffer_file}" ]]; then
+            cat "${buffer_file}"
+        fi
+    done
+}
+
+#==============================================================================
 # ANALYTICS FUNCTIONS
 #==============================================================================
 
@@ -486,83 +518,124 @@ fi
 # Git Configuration
 #------------------------------------------------------------------------------
 
-# Check for git config name
-TOOL="git config name"
-print_check_msg ${TOOL}
+# Function to check git config name
+function check_git_config_name {
+    TOOL="git config name"
+    print_check_msg ${TOOL}
+    git config --global user.name > /dev/null 2>&1
+    GIT_NAME_ALREADY_SET=$?
+    GIT_VERSION=$(git --version 2>/dev/null | awk '{print $3}' || echo "")
+    if [[ ${GIT_NAME_ALREADY_SET} -ne 0 ]]; then
+        print_missing_msg ${TOOL}
+        echo "What is your full name?"
+        echo "ex. Tam Nguyen"
+        read git_name
+        git config --global user.name "${git_name}"
+        print_installed_msg ${TOOL} false "system" "${GIT_VERSION}"
+    else
+        print_installed_msg ${TOOL} true "system" "${GIT_VERSION}"
+    fi
+}
+
+# Function to check git config email
+function check_git_config_email {
+    TOOL="git config email"
+    print_check_msg ${TOOL}
+    git config --global user.email > /dev/null 2>&1
+    GIT_EMAIL_ALREADY_SET=$?
+    GIT_VERSION=$(git --version 2>/dev/null | awk '{print $3}' || echo "")
+    if [[ ${GIT_EMAIL_ALREADY_SET} -ne 0 ]]; then
+        print_missing_msg ${TOOL}
+        echo "What is your email address?"
+        echo "ex. test@northslopetech.com"
+        read git_email
+        git config --global user.email "${git_email}"
+        print_installed_msg ${TOOL} false "system" "${GIT_VERSION}"
+    else
+        print_installed_msg ${TOOL} true "system" "${GIT_VERSION}"
+    fi
+}
+
+# Function to check git config push.autoSetupRemote
+function check_git_config_push {
+    TOOL="git config push.autoSetupRemote"
+    print_check_msg ${TOOL}
+    git config --global push.autoSetupRemote | grep "true" > /dev/null 2>&1
+    GIT_PUSH_ALREADY_SET=$?
+    GIT_VERSION=$(git --version 2>/dev/null | awk '{print $3}' || echo "")
+    if [[ ${GIT_PUSH_ALREADY_SET} -ne 0 ]]; then
+        print_missing_msg ${TOOL}
+        git config --global push.autoSetupRemote true
+        print_installed_msg ${TOOL} false "system" "${GIT_VERSION}"
+    else
+        print_installed_msg ${TOOL} true "system" "${GIT_VERSION}"
+    fi
+}
+
+# Check if any git config requires user input
 git config --global user.name > /dev/null 2>&1
-GIT_NAME_ALREADY_SET=$?
-GIT_VERSION=$(git --version 2>/dev/null | awk '{print $3}' || echo "")
-if [[ ${GIT_NAME_ALREADY_SET} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    echo "What is your full name?"
-    echo "ex. Tam Nguyen"
-    read git_name
-    git config --global user.name "${git_name}"
-    print_installed_msg ${TOOL} false "system" "${GIT_VERSION}"
-else
-    print_installed_msg ${TOOL} true "system" "${GIT_VERSION}"
-fi
-
-# Check for git config email
-TOOL="git config email"
-print_check_msg ${TOOL}
+GIT_NAME_SET=$?
 git config --global user.email > /dev/null 2>&1
-GIT_EMAIL_ALREADY_SET=$?
-if [[ ${GIT_EMAIL_ALREADY_SET} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    echo "What is your email address?"
-    echo "ex. test@northslopetech.com"
-    read git_email
-    git config --global user.email "${git_email}"
-    print_installed_msg ${TOOL} false "system" "${GIT_VERSION}"
-else
-    print_installed_msg ${TOOL} true "system" "${GIT_VERSION}"
-fi
+GIT_EMAIL_SET=$?
 
-# Check for git config push.autoSetupRemote
-TOOL="git config push.autoSetupRemote"
-print_check_msg ${TOOL}
-git config --global push.autoSetupRemote | grep "true" > /dev/null 2>&1
-GIT_PUSH_ALREADY_SET=$?
-if [[ ${GIT_PUSH_ALREADY_SET} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    git config --global push.autoSetupRemote true
-    print_installed_msg ${TOOL} false "system" "${GIT_VERSION}"
+# If user input is required, run sequentially. Otherwise parallelize.
+if [[ ${GIT_NAME_SET} -ne 0 || ${GIT_EMAIL_SET} -ne 0 ]]; then
+    # Run sequentially when user input is needed
+    check_git_config_name
+    check_git_config_email
+    check_git_config_push
 else
-    print_installed_msg ${TOOL} true "system" "${GIT_VERSION}"
+    # Run in parallel when no user input is needed
+    BUFFER_DIR=$(mktemp -d)
+    run_buffered "${BUFFER_DIR}/git_name.txt" check_git_config_name &
+    run_buffered "${BUFFER_DIR}/git_email.txt" check_git_config_email &
+    run_buffered "${BUFFER_DIR}/git_push.txt" check_git_config_push &
+    wait_and_print_buffered "${BUFFER_DIR}" "${BUFFER_DIR}/git_name.txt" "${BUFFER_DIR}/git_email.txt" "${BUFFER_DIR}/git_push.txt"
+    rm -rf "${BUFFER_DIR}"
 fi
 
 #------------------------------------------------------------------------------
 # Development Tools
 #------------------------------------------------------------------------------
 
-# Install Cursor
-TOOL=cursor
-print_check_msg ${TOOL}
-if [[ ! -d "/Applications/Cursor.app" ]]; then
-    print_missing_msg ${TOOL}
-    brew install --cask cursor
-    CURSOR_VERSION=$(plutil -p /Applications/Cursor.app/Contents/Info.plist 2>/dev/null | grep CFBundleShortVersionString | awk -F'"' '{print $4}' || echo "")
-    print_installed_msg ${TOOL} false "brew" "${CURSOR_VERSION}"
-else
-    CURSOR_VERSION=$(plutil -p /Applications/Cursor.app/Contents/Info.plist 2>/dev/null | grep CFBundleShortVersionString | awk -F'"' '{print $4}' || echo "")
-    print_installed_msg ${TOOL} true "brew" "${CURSOR_VERSION}"
-fi
+# Function to install Cursor
+function install_cursor {
+    TOOL=cursor
+    print_check_msg ${TOOL}
+    if [[ ! -d "/Applications/Cursor.app" ]]; then
+        print_missing_msg ${TOOL}
+        brew install --cask cursor
+        CURSOR_VERSION=$(plutil -p /Applications/Cursor.app/Contents/Info.plist 2>/dev/null | grep CFBundleShortVersionString | awk -F'"' '{print $4}' || echo "")
+        print_installed_msg ${TOOL} false "brew" "${CURSOR_VERSION}"
+    else
+        CURSOR_VERSION=$(plutil -p /Applications/Cursor.app/Contents/Info.plist 2>/dev/null | grep CFBundleShortVersionString | awk -F'"' '{print $4}' || echo "")
+        print_installed_msg ${TOOL} true "brew" "${CURSOR_VERSION}"
+    fi
+}
 
-# Install claude code
-TOOL=claude
-print_check_msg ${TOOL}
-claude --version > /dev/null 2>&1
-CLAUDE_ALREADY_INSTALLED=$?
-if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install --cask claude-code
-    CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_installed_msg ${TOOL} false "brew" "${CLAUDE_VERSION}"
-else
-    CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_installed_msg ${TOOL} true "brew" "${CLAUDE_VERSION}"
-fi
+# Function to install Claude Code
+function install_claude {
+    TOOL=claude
+    print_check_msg ${TOOL}
+    claude --version > /dev/null 2>&1
+    CLAUDE_ALREADY_INSTALLED=$?
+    if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
+        print_missing_msg ${TOOL}
+        brew install --cask claude-code
+        CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
+        print_installed_msg ${TOOL} false "brew" "${CLAUDE_VERSION}"
+    else
+        CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
+        print_installed_msg ${TOOL} true "brew" "${CLAUDE_VERSION}"
+    fi
+}
+
+# Run installations in parallel
+BUFFER_DIR=$(mktemp -d)
+run_buffered "${BUFFER_DIR}/cursor.txt" install_cursor &
+run_buffered "${BUFFER_DIR}/claude.txt" install_claude &
+wait_and_print_buffered "${BUFFER_DIR}" "${BUFFER_DIR}/cursor.txt" "${BUFFER_DIR}/claude.txt"
+rm -rf "${BUFFER_DIR}"
 
 #------------------------------------------------------------------------------
 # Programming Languages & Tools (via asdf)
@@ -579,11 +652,29 @@ asdf_tools=(
     java__openjdk-17.0.2
 )
 
+# Wrapper function to call asdf_install_and_set for parallel execution
+function install_asdf_tool_wrapper {
+    local tool=$1
+    local version=$2
+    asdf_install_and_set ${tool} ${version}
+}
+
+# Run all asdf installations in parallel
+BUFFER_DIR=$(mktemp -d)
+BUFFER_FILES=()
 for asdf_tool in ${asdf_tools[@]}; do
     tool=${asdf_tool%__*}
     version=${asdf_tool#*__}
-    asdf_install_and_set ${tool} ${version}
+    buffer_file="${BUFFER_DIR}/${tool}.txt"
+    BUFFER_FILES+=("${buffer_file}")
+    run_buffered "${buffer_file}" install_asdf_tool_wrapper ${tool} ${version} &
 done
+
+# Wait for all installations to complete and print in order
+wait_and_print_buffered "${BUFFER_DIR}" "${BUFFER_FILES[@]}"
+rm -rf "${BUFFER_DIR}"
+
+# Reshim after all installations complete
 asdf reshim
 
 #------------------------------------------------------------------------------
