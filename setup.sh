@@ -56,7 +56,7 @@ function print_failed_install_msg {
 
 function print_and_record_upgraded_msg {
     local tool=$1
-    local version=${2:-""}
+    local version=$2
     local installer=${3:-"manual"}
     echo "'${tool}' Upgraded to ${version} 🔥"
 
@@ -67,7 +67,7 @@ function print_and_record_already_installed_msg {
     local tool=$1
     local version=${2:-""}
     local installer=${3:-"manual"}
-    echo "'${tool}' Already Installed ✅"
+    echo "'${tool}' Installed ✅"
 
     record_tool_result "${tool}" "already_installed" "" "0" "${installer}" "${version}"
 }
@@ -76,7 +76,7 @@ function print_and_record_newly_installed_msg {
     local tool=$1
     local version=${2:-""}
     local installer=${3:-"manual"}
-    echo "'${tool}' Freshly Installed ✨"
+    echo "'${tool}' Newly Installed ✨"
 
     record_tool_result "${tool}" "installed" "" "0" "${installer}" "${version}"
 }
@@ -377,49 +377,24 @@ if [[ ${SETUP_ALREADY_INSTALLED} -ne 0 ]]; then
     rm ${TEMP_ZSHRC}
     alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
-    print_and_record_newly_installed_msg ${TOOL}
-else
-    print_and_record_already_installed_msg ${TOOL}
-fi
-
-# Check setup version
-print_check_msg "setup version"
-IS_UPGRADING=0
-if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
-    current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
-    if [[ "${current_version}" != "`get_latest_version`" ]]; then
-        echo "Local 'setup' version is out of date. Local(${current_version}) != Remote(`get_latest_version`). 🚫"
-        IS_UPGRADING=1
-    else
-        echo "Version is up to date: ${current_version} ✅"
-    fi
-else
-    echo "No local version set 🚫 "
-fi
-
-# Download/upgrade setup command
-TOOL="setup command"
-SETUP_CMD_ALREADY_INSTALLED=0
-if [ ${IS_UPGRADING} -eq 0 ]; then
-    print_check_msg ${TOOL}
-fi
-if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ${IS_UPGRADING} -eq 1 ]]; then
-    SETUP_CMD_ALREADY_INSTALLED=1
-    if [ ${IS_UPGRADING} -eq 0 ]; then
-        # Show only if we are not upgrading
-        print_missing_msg ${TOOL}
-    else
-        echo "Upgrading ${TOOL}..."
-    fi
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
-fi
-SETUP_VERSION=$(cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} 2>/dev/null || echo "")
-
-if [[ ${SETUP_CMD_ALREADY_INSTALLED} -eq 0 ]]; then
-    print_and_record_already_installed_msg ${TOOL} ${SETUP_VERSION}
+    print_and_record_newly_installed_msg ${TOOL}
 else
-    print_and_record_newly_installed_msg ${TOOL} ${SETUP_VERSION}
+    IS_UPGRADING=1
+    if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
+        current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
+        if [[ "${current_version}" != "`get_latest_version`" ]]; then
+            IS_UPGRADING=0
+        fi
+    fi
+    if [[ ${IS_UPGRADING} -eq 0 ]]; then
+        curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+        get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
+        print_and_record_upgraded_msg ${TOOL} `get_latest_version`
+    else
+        print_and_record_already_installed_msg ${TOOL}
+    fi
 fi
 
 
@@ -682,7 +657,6 @@ fi
 # Installing osdk-cli
 TOOL="osdk-cli"
 print_check_msg "${TOOL}"
-# Check if osdk-cli is already installed
 osdk-cli --version > /dev/null 2>&1
 OSDK_ALREADY_INSTALLED=$?
 CURR_OSDK_VERSION=""
