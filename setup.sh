@@ -182,19 +182,14 @@ function emit_setup_finished_event {
     local failed_count=0
 
     # Build tools array
-    local tools_json="["
-    local first=true
+    local tools_json="{"
+    local sep=""
     for i in {1..${#TOOL_NAMES[@]}}; do
-        if [[ "$first" == "false" ]]; then
-            tools_json+=","
-        fi
-        first=false
-
         # Escape strings for JSON
         local escaped_name=$(echo "${TOOL_NAMES[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g')
         local escaped_msg=$(echo "${TOOL_MESSAGES[$i]}" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr -d '\n' | tr -d '\r')
 
-        tools_json+="{\"tool\":\"${escaped_name}\",\"status\":\"${TOOL_STATUSES[$i]}\",\"message\":\"${escaped_msg}\",\"exit_code\":${TOOL_EXIT_CODES[$i]},\"timestamp\":\"${TOOL_TIMESTAMPS[$i]}\"}"
+        tools_json+="${sep}\"${escaped_name}\": {\"tool\":\"${escaped_name}\",\"status\":\"${TOOL_STATUSES[$i]}\",\"message\":\"${escaped_msg}\",\"exit_code\":${TOOL_EXIT_CODES[$i]},\"timestamp\":\"${TOOL_TIMESTAMPS[$i]}\"}"
 
         # Count status types
         case "${TOOL_STATUSES[$i]}" in
@@ -202,8 +197,9 @@ function emit_setup_finished_event {
             "installed") ((installed_count++)) ;;
             "failed") ((failed_count++)) ;;
         esac
+        sep=","
     done
-    tools_json+="]"
+    tools_json+="}"
 
     results_json+="\"tools\":${tools_json},\"summary\":{\"already_installed\":${already_installed_count},\"installed\":${installed_count},\"failed\":${failed_count},\"total\":${#TOOL_NAMES[@]}}"
     results_json+="}"
