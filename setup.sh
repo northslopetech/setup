@@ -587,23 +587,27 @@ for asdf_tool in ${asdf_tools[@]}; do
 done
 asdf reshim
 
+#------------------------------------------------------------------------------
+# Direnv Hook Setup
+#------------------------------------------------------------------------------
+
 # Set up direnv to be hooked into zsh
-direnv version > /dev/null 2>&1
-DIRENV_INSTALLED_PROPERLY=$?
+TOOL="direnv hook"
+direnv --version > /dev/null 2>&1
+DIRENV_INSTALLED=$?
+print_check_msg "${TOOL}"
 
-if [[ ${DIRENV_INSTALLED_PROPERLY} -ne 0 ]]; then
-    echo "direnv command not available - cannot add hook"
+cat ~/.zshrc | grep "eval \"$(direnv hook zsh)\"" > /dev/null 2>&1
+DIRENV_HOOK_IS_SETUP=$?
+
+if [[ ${DIRENV_INSTALLED} -ne 0 ]]; then
+    print_failed_install_msg "${TOOL}" "direnv was not installed" ${install_status} "manual" "${version}"
 else
-    # Check if hook is already configured
-    cat ~/.zshrc | grep "eval \"(direnv hook zsh)\"" > /dev/null 2>&1
-    DIRENV_ZSHRC_ALREADY_CONFIGURED=$?
-
-    if [[ ${DIRENV_ZSHRC_ALREADY_CONFIGURED} -ne 0 ]]; then
-        echo "direnv hook not configured - configuring..."
+    if [[ ${DIRENV_HOOK_IS_SETUP} -ne 0 ]]; then
         echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
-        echo "direnv hook configured ✅"
+        print_installed_msg "${TOOL}" true "manual" ""
     else
-        echo "direnv hook already configured ✅"
+        print_installed_msg "${TOOL}" false "manual" ""
     fi
 fi
 
