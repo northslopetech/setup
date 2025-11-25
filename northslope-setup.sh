@@ -60,8 +60,8 @@ function get_latest_version {
 }
 
 function get_local_version {
-    if [[ -f "${HOME}/.northslope/setup-version" ]]; then
-        cat ${HOME}/.northslope/setup-version
+    if [[ -f "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}" ]]; then
+        cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
     else
         echo "Missing"
     fi
