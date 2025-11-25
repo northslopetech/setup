@@ -108,7 +108,7 @@ if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
     if [[ ${curl_exit_code} -ne 0 ]]; then
         error_msg="Failed to download updated northslope-setup.sh: ${curl_output}"
         echo "'northslope-setup' Failure 🚫"
-        emit_wrapper_failure_event "${error_msg}" ${curl_exit_code} &
+        emit_wrapper_failure_event "${error_msg}" ${curl_exit_code}
         echo "${error_msg}"
         exit 1
     fi
@@ -129,7 +129,7 @@ curl_exit_code=$?
 if [[ ${curl_exit_code} -ne 0 ]]; then
     error_msg="Failed to download setup.sh: ${curl_output}"
     echo "'northslope-setup' Failure 🚫"
-    emit_wrapper_failure_event "${error_msg}" ${curl_exit_code} &
+    emit_wrapper_failure_event "${error_msg}" ${curl_exit_code}
     exit 1
 fi
 
