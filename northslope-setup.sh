@@ -1,7 +1,12 @@
 #!/bin/zsh
 
+CACHED_LATEST_VERSION=""
+
 function get_latest_version {
-    curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | jq -r '.tag_name' | sed 's/\s//g' | sed 's/\n//g'
+    if [[ "${CACHED_LATEST_VERSION}" == "" ]]; then
+        CACHED_LATEST_VERSION=$(curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | grep tag_name | awk -F'"' '{ print $4 }' | sed 's/ //g')
+    fi
+    echo "${CACHED_LATEST_VERSION}"
 }
 
 function print_usage {
