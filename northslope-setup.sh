@@ -1,5 +1,55 @@
 #!/bin/zsh
 
+NORTHSLOPE_DIR=${HOME}/.northslope
+NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
+mkdir -p ${NORTHSLOPE_DIR} > /dev/null 2>&1
+
+# PostHog configuration for error tracking
+POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
+session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
+current_timezone=`date "+%z"`
+
+function get_timestamp {
+    date -u '+%Y-%m-%dT%H:%M:%SZ'
+}
+
+function emit_wrapper_failure_event {
+    local error_msg=$1
+    local exit_code=${2:-1}
+    local timestamp=`get_timestamp`
+    local local_version=$(get_local_version)
+    local remote_version=$(get_latest_version)
+
+    # Escape error message for JSON (backslashes first, then quotes, then newlines)
+    local escaped_error_msg=$(printf '%s' "${error_msg}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
+
+    # Build exception list
+    local exception_list="[{\"type\":\"northslope-setup:failure\",\"value\":\"${escaped_error_msg}\",\"mechanism\":{\"type\":\"shell_script\",\"handled\":false},\"module\":\"northslope-setup.sh\"}]"
+
+    curl --silent -XPOST https://us.i.posthog.com/capture/ \
+        --header "Content-Type: application/json" \
+        --data '{
+            "api_key": "'"${POSTHOG_KEY}"'",
+            "event": "$exception",
+            "properties": {
+                "distinct_id": "'"${USER}"'",
+                "user": "'"${USER}"'",
+                "timestamp": "'"${timestamp}"'",
+                "$exception_type": "northslope-setup:failure",
+                "$exception_message": "'"${escaped_error_msg}"'",
+                "$exception_level": "error",
+                "$exception_list": '"${exception_list}"',
+                "$exception_fingerprint": "northslope-setup-failure-'"${session_key}"'",
+                "exit_code": '"${exit_code}"',
+                "local_version": "'"${local_version}"'",
+                "remote_version": "'"${remote_version}"'",
+                "session_key": "'"${session_key}"'",
+                "timezone_offset": "'"${current_timezone}"'",
+                "env": "'"${POSTHOG_ENV:-prod}"'"
+            }
+        }' > /dev/null 2>&1
+}
+
 CACHED_LATEST_VERSION=""
 
 function get_latest_version {
@@ -13,19 +63,16 @@ function get_local_version {
     if [[ -f "${HOME}/.northslope/setup-version" ]]; then
         cat ${HOME}/.northslope/setup-version
     else
-        echo ""
+        echo "Missing"
     fi
 }
 
-function is_up_to_date {
+function is_northslope_script_out_of_date {
     local_version=$(get_local_version)
     latest_version=$(get_latest_version)
-    if [[ "${local_version}" == "${latest_version}" ]]; then
-        return 0
-    else
-        return 1
-    fi
+    [[ "${local_version}" == "${latest_version}" ]]
 }
+
 
 function print_usage {
     echo "Usage: setup [OSDK_CLI_BRANCH]"
@@ -35,33 +82,39 @@ function print_usage {
     echo "   Your Version  : $(get_local_version)"
     echo "   Latest Version: $(get_latest_version)"
     echo ""
-    if [[ $(is_up_to_date) -ne 0 ]]; then
-    echo "   This script will be updated to the latest version before running."
+    if [ is_northslope_script_out_of_date ]; then
+    echo "   ⚠️ Script Outdated"
+    echo "   This script will update itself the latest version before running"
     fi
 }
 
-northslope_setup_version=`cat ${HOME}/.northslope/setup-version`
-
-# Show help if requested
-if [[ "$1" == "--help" || "$1" == "-h" || "$1" == "help" ]]; then
-    print_usage
-    exit 0
-fi
+case "$1" in
+    --help|-h|help|version|--version|-v)
+        print_usage
+        exit 0
+        ;;
+    --skip-update|skip)
+        SKIP_UPDATE=0
+        shift
+        ;;
+esac
 
 # Check if local version matches remote version, and self-update if needed
-if [[ is_up_to_date -ne 0 ]]; then
-    echo "Updating setup command from ${northslope_setup_version} to ${remote_version}..."
-
+if [[ -z ${SKIP_UPDATE} ]] && [ is_northslope_script_out_of_date ]; then
     # Download the new northslope-setup.sh
     new_script="${HOME}/.northslope/northslope-setup.sh"
-    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > "${new_script}"
-    if [[ $? -ne 0 ]]; then
-        echo "Error: Unable to download the updated setup script."
+    curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh 2>&1 > "${new_script}")
+    curl_exit_code=$?
+    if [[ ${curl_exit_code} -ne 0 ]]; then
+        error_msg="Failed to download updated northslope-setup.sh: ${curl_output}"
+        echo "'northslope-setup' Failure 🚫"
+        emit_wrapper_failure_event "${error_msg}" ${curl_exit_code} &
+        echo "${error_msg}"
         exit 1
     fi
 
     # Update version file
-    echo "${remote_version}" > ${HOME}/.northslope/setup-version
+    get_latest_version > ${HOME}/.northslope/setup-version
 
     # Make executable and re-execute with the new version (exec replaces current process)
     chmod +x "${new_script}"
@@ -71,12 +124,16 @@ fi
 
 # Create a temp setup script so that we can pass in command line args
 setup_script=`mktemp`
-curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh > ${setup_script}
-if [[ $? -ne 0 ]]; then
-    echo "Error: Unable to download the northslope setup script."
+curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh 2>&1 > ${setup_script})
+curl_exit_code=$?
+if [[ ${curl_exit_code} -ne 0 ]]; then
+    error_msg="Failed to download setup.sh: ${curl_output}"
+    echo "'northslope-setup' Failure 🚫"
+    emit_wrapper_failure_event "${error_msg}" ${curl_exit_code} &
     exit 1
 fi
-/bin/zsh ${setup_script} "$@"
+
+exec /bin/zsh ${setup_script} "$@"
 exit_code=$?
 rm ${setup_script}
 exit ${exit_code}
