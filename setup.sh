@@ -781,7 +781,7 @@ else
         print_and_record_newly_installed_msg "${TOOL}:${OSDK_BRANCH}" "${OSDK_BRANCH}" "manual"
     else
         log_contents=$(cat ${OSDK_INSTALL_LOG})
-        print_failed_install_msg "${TOOL}" "${failed_step} failed. Log: ${log_contents}" 1 "manual" "${OSDK_BRANCH}"
+        print_failed_install_msg "${TOOL}:${OSDK_BRANCH}" "${failed_step} failed. Log: ${log_contents}" 1 "manual" "${OSDK_BRANCH}"
     fi
 
     cd - > /dev/null 2>&1
