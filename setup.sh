@@ -705,7 +705,6 @@ else
 
     # Clone repository if it doesn't exist
     if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
-        echo "=== Cloning repository ===" >> ${OSDK_INSTALL_LOG}
         echo "$ gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
         gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
@@ -726,7 +725,6 @@ else
 
     # Checkout the specified branch
     if [[ ${should_install} -eq 1 ]]; then
-        echo "=== Checking out branch ${OSDK_BRANCH} ===" >> ${OSDK_INSTALL_LOG}
         echo "$ git checkout main" >> ${OSDK_INSTALL_LOG}
         git checkout main >> ${OSDK_INSTALL_LOG} 2>&1
         echo "$ git fetch --all" >> ${OSDK_INSTALL_LOG}
@@ -741,7 +739,6 @@ else
 
     # Install dependencies
     if [[ ${should_install} -eq 1 ]]; then
-        echo "=== Installing dependencies ===" >> ${OSDK_INSTALL_LOG}
         echo "$ rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules" >> ${OSDK_INSTALL_LOG}
         rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules >> ${OSDK_INSTALL_LOG} 2>&1
         echo "$ pnpm install --frozen-lockfile" >> ${OSDK_INSTALL_LOG}
@@ -754,7 +751,6 @@ else
 
     # Build the package
     if [[ ${should_install} -eq 1 ]]; then
-        echo "=== Building package ===" >> ${OSDK_INSTALL_LOG}
         echo "$ pnpm build" >> ${OSDK_INSTALL_LOG}
         pnpm build >> ${OSDK_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
@@ -765,7 +761,6 @@ else
 
     # Link the package globally
     if [[ ${should_install} -eq 1 ]]; then
-        echo "=== Linking package ===" >> ${OSDK_INSTALL_LOG}
         echo "$ npm link" >> ${OSDK_INSTALL_LOG}
         npm link >> ${OSDK_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
