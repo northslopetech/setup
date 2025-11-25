@@ -713,15 +713,8 @@ else
         fi
     fi
 
-    # Change to osdk-cli directory
-    if [[ ${should_install} -eq 1 ]]; then
-        echo "$ cd ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
-        cd ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
-        if [[ $? -ne 0 ]]; then
-            should_install=0
-            failed_step="cd to ${LOCAL_OSDK_CLI_DIR}"
-        fi
-    fi
+    echo "$ cd ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
+    cd ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
 
     # Fetch the specified branch
     if [[ ${should_install} -eq 1 ]]; then
