@@ -723,12 +723,20 @@ else
         fi
     fi
 
-    # Checkout the specified branch
+    # Fetch the specified branch
     if [[ ${should_install} -eq 1 ]]; then
         echo "$ git checkout main" >> ${OSDK_INSTALL_LOG}
         git checkout main >> ${OSDK_INSTALL_LOG} 2>&1
         echo "$ git fetch --all" >> ${OSDK_INSTALL_LOG}
         git fetch --all >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="git fetch --all"
+        fi
+    fi
+
+    # Checkout the specified branch
+    if [[ ${should_install} -eq 1 ]]; then
         echo "$ git checkout origin/${OSDK_BRANCH}" >> ${OSDK_INSTALL_LOG}
         git checkout origin/${OSDK_BRANCH} >> ${OSDK_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
