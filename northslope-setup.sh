@@ -3,6 +3,8 @@
 NORTHSLOPE_DIR=${HOME}/.northslope
 NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 mkdir -p ${NORTHSLOPE_DIR} > /dev/null 2>&1
+NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/setup.sh
+NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 
 # PostHog configuration for error tracking
 POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
@@ -101,8 +103,7 @@ esac
 if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
     echo "Updating self to latest version ($(get_latest_version))..."
     # Download the new northslope-setup.sh
-    new_script="${HOME}/.northslope/northslope-setup.sh"
-    curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh -o "${new_script}" 2>&1)
+    curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh -o "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
     curl_exit_code=$?
     if [[ ${curl_exit_code} -ne 0 ]]; then
         error_msg="Failed to download updated northslope-setup.sh: ${curl_output}"
@@ -116,15 +117,14 @@ if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
     get_latest_version > "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}"
 
     # Make executable and re-execute with the new version (exec replaces current process)
-    chmod +x "${new_script}"
-    exec /bin/zsh "${new_script}" "$@"
+    chmod +x "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}"
+    exec /bin/zsh "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" "$@"
 fi
 
 echo "Running 'setup' version $(get_local_version)"
 
-# Create a temp setup script so that we can pass in command line args
-setup_script=$(mktemp)
-curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh -o "${setup_script}" 2>&1)
+# Create a setup script so that we can pass in command line args
+curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh -o "${NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
 curl_exit_code=$?
 if [[ ${curl_exit_code} -ne 0 ]]; then
     error_msg="Failed to download setup.sh: ${curl_output}"
@@ -133,4 +133,4 @@ if [[ ${curl_exit_code} -ne 0 ]]; then
     exit 1
 fi
 
-exec /bin/zsh "${setup_script}" "$@"
+exec /bin/zsh "${NORTHSLOPE_SETUP_SCRIPT_PATH}" "$@"
