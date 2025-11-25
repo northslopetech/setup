@@ -49,8 +49,6 @@ function print_failed_install_msg {
     local version=${5:-""}
 
     echo "'${tool}' Not Installed 🚫"
-    echo "  Error: ${error_msg}"
-
     capture_failure "${tool}" "${error_msg}" "${exit_code}" "${installer}" "${version}"
 }
 
@@ -696,25 +694,93 @@ else
     NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
     mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
     LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
-    IS_NEW=1
+
+    # Create a log file for this installation
+    OSDK_INSTALL_LOG="${NORTHSLOPE_DIR}/osdk-cli-install.log"
+    echo "" > ${OSDK_INSTALL_LOG}  # Clear/create the log file
+
+    # Flag to track if we should proceed with installation
+    should_install=1
+    failed_step=""
+
+    # Clone repository if it doesn't exist
     if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
-        gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}
-        IS_NEW=0
+        echo "=== Cloning repository ===" >> ${OSDK_INSTALL_LOG}
+        echo "$ gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
+        gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="gh repo clone"
+        fi
     fi
-    cd ${LOCAL_OSDK_CLI_DIR} > /dev/null 2>&1
-    git checkout main > /dev/null 2>&1
-    git fetch --all > /dev/null 2>&1
-    git checkout origin/${OSDK_BRANCH} > /dev/null 2>&1
-    checkout_success=$?
-    if [[ ${checkout_success} -ne 0 ]]; then
-        echo "'${OSDK_BRANCH}' Does Not Exist! Not Installed 🚫"
-    else
-        rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules > /dev/null 2>&1
-        pnpm install --frozen-lockfile > /dev/null 2>&1
-        pnpm build > /dev/null 2>&1
-        npm link > /dev/null 2>&1
+
+    # Change to osdk-cli directory
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "$ cd ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
+        cd ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="cd to ${LOCAL_OSDK_CLI_DIR}"
+        fi
+    fi
+
+    # Checkout the specified branch
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "=== Checking out branch ${OSDK_BRANCH} ===" >> ${OSDK_INSTALL_LOG}
+        echo "$ git checkout main" >> ${OSDK_INSTALL_LOG}
+        git checkout main >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ git fetch --all" >> ${OSDK_INSTALL_LOG}
+        git fetch --all >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ git checkout origin/${OSDK_BRANCH}" >> ${OSDK_INSTALL_LOG}
+        git checkout origin/${OSDK_BRANCH} >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="git checkout origin/${OSDK_BRANCH}"
+        fi
+    fi
+
+    # Install dependencies
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "=== Installing dependencies ===" >> ${OSDK_INSTALL_LOG}
+        echo "$ rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules" >> ${OSDK_INSTALL_LOG}
+        rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ pnpm install --frozen-lockfile" >> ${OSDK_INSTALL_LOG}
+        pnpm install --frozen-lockfile >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="pnpm install --frozen-lockfile"
+        fi
+    fi
+
+    # Build the package
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "=== Building package ===" >> ${OSDK_INSTALL_LOG}
+        echo "$ pnpm build" >> ${OSDK_INSTALL_LOG}
+        pnpm build >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="pnpm build"
+        fi
+    fi
+
+    # Link the package globally
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "=== Linking package ===" >> ${OSDK_INSTALL_LOG}
+        echo "$ npm link" >> ${OSDK_INSTALL_LOG}
+        npm link >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="npm link"
+        fi
+    fi
+
+    if [[ ${should_install} -eq 1 ]]; then
         print_and_record_newly_installed_msg "${TOOL}" "${OSDK_BRANCH}" "manual"
+    else
+        log_contents=$(cat ${OSDK_INSTALL_LOG})
+        print_failed_install_msg "${TOOL}" "${failed_step} failed. Log: ${log_contents}" 1 "manual" "${OSDK_BRANCH}"
     fi
+
     cd - > /dev/null 2>&1
 fi
 
