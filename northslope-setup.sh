@@ -97,28 +97,38 @@ case "$1" in
         SKIP_UPDATE=true
         shift
         ;;
+    --child)
+        # Used to prevent infinite self-update loops
+        IS_CHILD=true
+        shift
+        ;;
 esac
 
 # Check if local version matches remote version, and self-update if needed
 if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
-    echo "Updating self to latest version ($(get_latest_version))..."
-    # Download the new northslope-setup.sh
-    curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh -o "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
-    curl_exit_code=$?
-    if [[ ${curl_exit_code} -ne 0 ]]; then
-        error_msg="Failed to download updated northslope-setup.sh: ${curl_output}"
-        echo "'northslope-setup' Failure 🚫"
-        emit_wrapper_failure_event "${error_msg}" ${curl_exit_code}
-        echo "${error_msg}"
-        exit 1
+    if [[ -z "${IS_CHILD}" ]]; then
+        echo "Updating self to latest version ($(get_latest_version))..."
+        # Download the new northslope-setup.sh
+        curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh -o "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
+        curl_exit_code=$?
+        if [[ ${curl_exit_code} -ne 0 ]]; then
+            error_msg="Failed to download updated northslope-setup.sh: ${curl_output}"
+            echo "'northslope-setup' Failure 🚫"
+            emit_wrapper_failure_event "${error_msg}" ${curl_exit_code}
+            echo "${error_msg}"
+            exit 1
+        fi
+
+        # Update version file
+        get_latest_version > "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}"
+
+        # Make executable and re-execute with the new version (exec replaces current process)
+        chmod +x "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}"
+        exec /bin/zsh "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" --child "$@"
+    else
+        echo "Warning: Self-update attempted, but versions are Local($(get_local_version)) Latest($(get_latest_version))"
+        echo "Proceeding with current version to avoid infinite loop."
     fi
-
-    # Update version file
-    get_latest_version > "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}"
-
-    # Make executable and re-execute with the new version (exec replaces current process)
-    chmod +x "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}"
-    exec /bin/zsh "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" "$@"
 fi
 
 echo "Running 'setup' version $(get_local_version)"
