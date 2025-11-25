@@ -6,8 +6,8 @@ mkdir -p ${NORTHSLOPE_DIR} > /dev/null 2>&1
 
 # PostHog configuration for error tracking
 POSTHOG_KEY=phc_Me99GOmroO6r5TiJwJoD3VpSoBr6JbWk3lo9rrLkEyQ
-session_key="`date +%s`-$(( ( $RANDOM % 100 ) + 1 ))"
-current_timezone=`date "+%z"`
+session_key="$(date +%s)-$(( ( $RANDOM % 100 ) + 1 ))"
+current_timezone=$(date "+%z")
 
 function get_timestamp {
     date -u '+%Y-%m-%dT%H:%M:%SZ'
@@ -16,7 +16,7 @@ function get_timestamp {
 function emit_wrapper_failure_event {
     local error_msg=$1
     local exit_code=${2:-1}
-    local timestamp=`get_timestamp`
+    local timestamp=$(get_timestamp)
     local local_version=$(get_local_version)
     local remote_version=$(get_latest_version)
 
@@ -68,9 +68,7 @@ function get_local_version {
 }
 
 function is_northslope_script_up_to_date {
-    local_version=$(get_local_version)
-    latest_version=$(get_latest_version)
-    [[ "${local_version}" == "${latest_version}" ]]
+    [[ "$(get_local_version)" == "$(get_latest_version)" ]]
 }
 
 
@@ -115,19 +113,18 @@ if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
     fi
 
     # Update version file
-    get_latest_version > ${HOME}/.northslope/setup-version
+    get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
 
     # Make executable and re-execute with the new version (exec replaces current process)
     chmod +x "${new_script}"
     exec /bin/zsh "${new_script}" "$@"
-    exit $?
 fi
 
-echo "Running 'setup' version $(get_latest_version)"
+echo "Running 'setup' version $(get_local_version)"
 
 # Create a temp setup script so that we can pass in command line args
-setup_script=`mktemp`
-curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh -o ${setup_script} 2>&1)
+setup_script=$(mktemp)
+curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh -o "${setup_script}" 2>&1)
 curl_exit_code=$?
 if [[ ${curl_exit_code} -ne 0 ]]; then
     error_msg="Failed to download setup.sh: ${curl_output}"
