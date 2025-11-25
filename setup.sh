@@ -146,8 +146,8 @@ function emit_failure_event {
     local timestamp=$4
     local LATEST_SCRIPT_VERSION=`get_latest_version`
 
-    # Escape error message for JSON (backslashes first, then quotes)
-    local escaped_error_msg=$(echo "${error_msg}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
+    # Escape error message for JSON (backslashes first, then quotes, then newlines)
+    local escaped_error_msg=$(printf '%s' "${error_msg}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
     local escaped_tool=$(echo "${tool}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
     # Build exception list
@@ -215,9 +215,9 @@ function emit_setup_finished_event {
     local tools_json="{"
     local sep=""
     for i in {1..${#TOOL_NAMES[@]}}; do
-        # Escape strings for JSON (backslashes first, then quotes)
+        # Escape strings for JSON (backslashes first, then quotes, then newlines)
         local escaped_name=$(echo "${TOOL_NAMES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-        local escaped_msg=$(echo "${TOOL_MESSAGES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
+        local escaped_msg=$(printf '%s' "${TOOL_MESSAGES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
         local escaped_installer=$(echo "${TOOL_INSTALLERS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
         local escaped_version=$(echo "${TOOL_VERSIONS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
