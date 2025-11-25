@@ -133,7 +133,4 @@ if [[ ${curl_exit_code} -ne 0 ]]; then
     exit 1
 fi
 
-exec /bin/zsh ${setup_script} "$@"
-exit_code=$?
-rm ${setup_script}
-exit ${exit_code}
+exec /bin/zsh "${setup_script}" "$@"
