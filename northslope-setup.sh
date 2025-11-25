@@ -5,20 +5,24 @@ function get_latest_version {
 }
 
 function print_usage {
-    echo "Usage: setup"
+    echo "Usage: setup [OSDK_CLI_BRANCH]"
     echo "   This command will run the northslope setup script for your machine."
+    echo "   You can optionally provide a specific branch of the OSDK CLI to install."
+    echo ""
     echo "   Your Version  : ${northslope_setup_version}"
     echo "   Latest Version: $(get_latest_version)"
 }
 
 northslope_setup_version=`cat ${HOME}/.northslope/setup-version`
 
-if [[ ! -z $1 ]]; then
-    # Prints the help message if any
-    # arguments are passed. In the future,
-    # we can check to make sure it's a '--help'
+# Show help if requested
+if [[ "$1" == "--help" || "$1" == "-h" || "$1" == "help" ]]; then
     print_usage
-    exit 1
+    exit 0
 fi
 
-/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh)"
+# Create a temp setup script so that we can pass in command line args
+setup_script=`mktemp`
+curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh > ${setup_script}
+/bin/zsh ${setup_script} -- "$@"
+rm ${setup_script}
