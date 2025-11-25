@@ -61,14 +61,14 @@ function get_latest_version {
 
 function get_local_version {
     if [[ -f "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}" ]]; then
-        cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
+        cat "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}"
     else
         echo "Missing"
     fi
 }
 
 function is_northslope_script_up_to_date {
-    [[ "$(get_local_version)" == "$(get_latest_version)" ]]
+    [[ "$(get_local_version)" == "$(get_latest_version)" ]] && [[ "$(get_local_version)" != "Missing" ]] && [[ "$(get_latest_version)" != "" ]]
 }
 
 
@@ -113,7 +113,7 @@ if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
     fi
 
     # Update version file
-    get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
+    get_latest_version > "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}"
 
     # Make executable and re-execute with the new version (exec replaces current process)
     chmod +x "${new_script}"
