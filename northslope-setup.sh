@@ -67,7 +67,7 @@ function get_local_version {
     fi
 }
 
-function is_northslope_script_out_of_date {
+function is_northslope_script_up_to_date {
     local_version=$(get_local_version)
     latest_version=$(get_latest_version)
     [[ "${local_version}" == "${latest_version}" ]]
@@ -81,10 +81,10 @@ function print_usage {
     echo ""
     echo "   Your Version  : $(get_local_version)"
     echo "   Latest Version: $(get_latest_version)"
-    echo ""
-    if [ is_northslope_script_out_of_date ]; then
-    echo "   ⚠️ Script Outdated"
-    echo "   This script will update itself the latest version before running"
+    if ! is_northslope_script_up_to_date; then
+        echo ""
+        echo "   ⚠️ Script Outdated"
+        echo "   This script will update itself the latest version before running"
     fi
 }
 
@@ -94,16 +94,17 @@ case "$1" in
         exit 0
         ;;
     --skip-update|skip)
-        SKIP_UPDATE=0
+        SKIP_UPDATE=true
         shift
         ;;
 esac
 
 # Check if local version matches remote version, and self-update if needed
-if [[ -z ${SKIP_UPDATE} ]] && [ is_northslope_script_out_of_date ]; then
+if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
+    echo "Updating self to latest version ($(get_latest_version))..."
     # Download the new northslope-setup.sh
     new_script="${HOME}/.northslope/northslope-setup.sh"
-    curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh 2>&1 > "${new_script}")
+    curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh -o "${new_script}" 2>&1)
     curl_exit_code=$?
     if [[ ${curl_exit_code} -ne 0 ]]; then
         error_msg="Failed to download updated northslope-setup.sh: ${curl_output}"
@@ -122,9 +123,11 @@ if [[ -z ${SKIP_UPDATE} ]] && [ is_northslope_script_out_of_date ]; then
     exit $?
 fi
 
+echo "Running 'setup' version $(get_latest_version)"
+
 # Create a temp setup script so that we can pass in command line args
 setup_script=`mktemp`
-curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh 2>&1 > ${setup_script})
+curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh -o ${setup_script} 2>&1)
 curl_exit_code=$?
 if [[ ${curl_exit_code} -ne 0 ]]; then
     error_msg="Failed to download setup.sh: ${curl_output}"
