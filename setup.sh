@@ -49,8 +49,6 @@ function print_failed_install_msg {
     local version=${5:-""}
 
     echo "'${tool}' Not Installed 🚫"
-    echo "  Error: ${error_msg}"
-
     capture_failure "${tool}" "${error_msg}" "${exit_code}" "${installer}" "${version}"
 }
 
@@ -148,8 +146,8 @@ function emit_failure_event {
     local timestamp=$4
     local LATEST_SCRIPT_VERSION=`get_latest_version`
 
-    # Escape error message for JSON (backslashes first, then quotes)
-    local escaped_error_msg=$(echo "${error_msg}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
+    # Escape error message for JSON (backslashes first, then quotes, then newlines)
+    local escaped_error_msg=$(printf '%s' "${error_msg}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
     local escaped_tool=$(echo "${tool}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
     # Build exception list
@@ -217,9 +215,9 @@ function emit_setup_finished_event {
     local tools_json="{"
     local sep=""
     for i in {1..${#TOOL_NAMES[@]}}; do
-        # Escape strings for JSON (backslashes first, then quotes)
+        # Escape strings for JSON (backslashes first, then quotes, then newlines)
         local escaped_name=$(echo "${TOOL_NAMES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-        local escaped_msg=$(echo "${TOOL_MESSAGES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n' | tr -d '\r')
+        local escaped_msg=$(printf '%s' "${TOOL_MESSAGES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
         local escaped_installer=$(echo "${TOOL_INSTALLERS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
         local escaped_version=$(echo "${TOOL_VERSIONS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
@@ -346,6 +344,13 @@ for f in ${HOME}/.northslope*; do
     fi
     rm ${f}
 done
+
+#------------------------------------------------------------------------------
+# Parse OSDK Branch options
+#------------------------------------------------------------------------------
+
+OSDK_BRANCH="$1"
+
 
 #------------------------------------------------------------------------------
 # Setup Command Installation
@@ -654,32 +659,127 @@ fi
 # Northslope Tools
 #------------------------------------------------------------------------------
 
-# Installing osdk-cli
+# Install the osdk-cli using the deployed npm package
+# unless a specific branch is requested, in which case
+# we build and deploy a local version from that branch
 TOOL="osdk-cli"
-print_check_msg "${TOOL}"
-osdk-cli --version > /dev/null 2>&1
-OSDK_ALREADY_INSTALLED=$?
-CURR_OSDK_VERSION=""
-if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
-    CURR_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
-fi
-
-install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
-install_status=$?
-if [[ ${install_status} -eq 0 ]]; then
-    NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+if [[ "${OSDK_BRANCH}" == "" ]]; then
+    # Install osdk-cli from npm
+    print_check_msg "${TOOL}"
+    osdk-cli --version > /dev/null 2>&1
+    OSDK_ALREADY_INSTALLED=$?
+    CURR_OSDK_VERSION=""
     if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
-        if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
-            print_and_record_upgraded_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+        CURR_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+    fi
+
+    install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
+    install_status=$?
+    if [[ ${install_status} -eq 0 ]]; then
+        NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+        if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
+            if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
+                print_and_record_upgraded_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+            else
+                print_and_record_already_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+            fi
         else
-            print_and_record_already_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+            print_and_record_newly_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
         fi
     else
-        print_and_record_newly_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+        print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
     fi
 else
-    print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
+    print_check_msg "${TOOL}:${OSDK_BRANCH}"
+    NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
+    mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
+    LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
+
+    # Create a log file for this installation
+    OSDK_INSTALL_LOG="${NORTHSLOPE_DIR}/osdk-cli-install.log"
+    echo "" > ${OSDK_INSTALL_LOG}  # Clear/create the log file
+
+    # Flag to track if we should proceed with installation
+    should_install=1
+    failed_step=""
+
+    # Clone repository if it doesn't exist
+    if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
+        echo "$ gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
+        gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="gh repo clone"
+        fi
+    fi
+
+    echo "$ cd ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
+    cd ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
+
+    # Fetch the specified branch
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "$ git checkout main" >> ${OSDK_INSTALL_LOG}
+        git checkout main >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ git fetch --all" >> ${OSDK_INSTALL_LOG}
+        git fetch --all >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="git fetch --all"
+        fi
+    fi
+
+    # Checkout the specified branch
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "$ git checkout origin/${OSDK_BRANCH}" >> ${OSDK_INSTALL_LOG}
+        git checkout origin/${OSDK_BRANCH} >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="git checkout origin/${OSDK_BRANCH}"
+        fi
+    fi
+
+    # Install dependencies
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "$ rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules" >> ${OSDK_INSTALL_LOG}
+        rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ pnpm install --frozen-lockfile" >> ${OSDK_INSTALL_LOG}
+        pnpm install --frozen-lockfile >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="pnpm install --frozen-lockfile"
+        fi
+    fi
+
+    # Build the package
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "$ pnpm build" >> ${OSDK_INSTALL_LOG}
+        pnpm build >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="pnpm build"
+        fi
+    fi
+
+    # Link the package globally
+    if [[ ${should_install} -eq 1 ]]; then
+        echo "$ npm link" >> ${OSDK_INSTALL_LOG}
+        npm link >> ${OSDK_INSTALL_LOG} 2>&1
+        if [[ $? -ne 0 ]]; then
+            should_install=0
+            failed_step="npm link"
+        fi
+    fi
+
+    if [[ ${should_install} -eq 1 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}:${OSDK_BRANCH}" "${OSDK_BRANCH}" "manual"
+    else
+        log_contents=$(cat ${OSDK_INSTALL_LOG})
+        print_failed_install_msg "${TOOL}:${OSDK_BRANCH}" "${failed_step} failed. Log: ${log_contents}" 1 "manual" "${OSDK_BRANCH}"
+    fi
+
+    cd - > /dev/null 2>&1
 fi
+
 
 #------------------------------------------------------------------------------
 # Finalization
