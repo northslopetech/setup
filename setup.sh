@@ -348,6 +348,13 @@ for f in ${HOME}/.northslope*; do
 done
 
 #------------------------------------------------------------------------------
+# Parse OSDK Branch options
+#------------------------------------------------------------------------------
+
+OSDK_BRANCH="$1"
+
+
+#------------------------------------------------------------------------------
 # Setup Command Installation
 #------------------------------------------------------------------------------
 
@@ -654,32 +661,63 @@ fi
 # Northslope Tools
 #------------------------------------------------------------------------------
 
-# Installing osdk-cli
+# Install the osdk-cli using the deployed npm package
+# unless a specific branch is requested, in which case
+# we build and deploy a local version from that branch
 TOOL="osdk-cli"
-print_check_msg "${TOOL}"
-osdk-cli --version > /dev/null 2>&1
-OSDK_ALREADY_INSTALLED=$?
-CURR_OSDK_VERSION=""
-if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
-    CURR_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
-fi
-
-install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
-install_status=$?
-if [[ ${install_status} -eq 0 ]]; then
-    NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+if [[ "${OSDK_BRANCH}" == "" ]]; then
+    # Install osdk-cli from npm
+    print_check_msg "${TOOL}"
+    osdk-cli --version > /dev/null 2>&1
+    OSDK_ALREADY_INSTALLED=$?
+    CURR_OSDK_VERSION=""
     if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
-        if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
-            print_and_record_upgraded_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+        CURR_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+    fi
+
+    install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
+    install_status=$?
+    if [[ ${install_status} -eq 0 ]]; then
+        NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+        if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
+            if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
+                print_and_record_upgraded_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+            else
+                print_and_record_already_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+            fi
         else
-            print_and_record_already_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+            print_and_record_newly_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
         fi
     else
-        print_and_record_newly_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+        print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
     fi
 else
-    print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
+    print_check_msg "${TOOL}:${OSDK_BRANCH}"
+    NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
+    mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
+    LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
+    IS_NEW=1
+    if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
+        gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}
+        IS_NEW=0
+    fi
+    cd ${LOCAL_OSDK_CLI_DIR} > /dev/null 2>&1
+    git checkout main > /dev/null 2>&1
+    git fetch --all > /dev/null 2>&1
+    git checkout origin/${OSDK_BRANCH} > /dev/null 2>&1
+    checkout_success=$?
+    if [[ ${checkout_success} -ne 0 ]]; then
+        echo "'${OSDK_BRANCH}' Does Not Exist! Not Installed 🚫"
+    else
+        rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules > /dev/null 2>&1
+        pnpm install --frozen-lockfile > /dev/null 2>&1
+        pnpm build > /dev/null 2>&1
+        npm link > /dev/null 2>&1
+        print_and_record_newly_installed_msg "${TOOL}" "${OSDK_BRANCH}" "manual"
+    fi
+    cd - > /dev/null 2>&1
 fi
+
 
 #------------------------------------------------------------------------------
 # Finalization
