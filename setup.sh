@@ -695,6 +695,14 @@ else
     mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
     LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
 
+    npm uninstall -g osdk-cli > /dev/null 2>&1
+
+    current_osdk_path=`asdf which osdk-cli 2>/dev/null`
+    if [[ "${current_osdk_path}" != "" ]]; then
+        rm ${current_osdk_path} > /dev/null 2>&1
+    fi
+
+
     # Create a log file for this installation
     OSDK_INSTALL_LOG="${NORTHSLOPE_DIR}/osdk-cli-install.log"
     echo "" > ${OSDK_INSTALL_LOG}  # Clear/create the log file
