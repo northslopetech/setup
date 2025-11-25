@@ -24,5 +24,5 @@ fi
 # Create a temp setup script so that we can pass in command line args
 setup_script=`mktemp`
 curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh > ${setup_script}
-/bin/zsh ${setup_script} -- "$@"
+/bin/zsh ${setup_script} "$@"
 rm ${setup_script}
