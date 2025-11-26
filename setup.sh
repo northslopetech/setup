@@ -484,6 +484,39 @@ else
     print_and_record_already_installed_msg ${TOOL}
 fi
 
+# Install autojump
+TOOL=autojump
+print_check_msg ${TOOL}
+autojump --version > /dev/null 2>&1
+AUTOJUMP_ALREADY_INSTALLED=$?
+if [[ ${AUTOJUMP_ALREADY_INSTALLED} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install autojump
+    AUTOJUMP_VERSION=$(autojump --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_newly_installed_msg ${TOOL} ${AUTOJUMP_VERSION} "brew"
+else
+    AUTOJUMP_VERSION=$(autojump --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_already_installed_msg ${TOOL} ${AUTOJUMP_VERSION} "brew"
+fi
+
+# Set up autojump to be sourced in zsh
+TOOL="autojump in .zshrc"
+print_check_msg "${TOOL}"
+
+cat ~/.zshrc | grep "profile.d/autojump.sh" > /dev/null 2>&1
+AUTOJUMP_ZSHRC_IS_SETUP=$?
+
+if [[ ${AUTOJUMP_ALREADY_INSTALLED} -ne 0 ]]; then
+    print_failed_install_msg "${TOOL}" "autojump was not installed" 1 "manual" ""
+else
+    if [[ ${AUTOJUMP_ZSHRC_IS_SETUP} -ne 0 ]]; then
+        echo '[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh' >> $HOME/.zshrc
+        print_and_record_newly_installed_msg "${TOOL}"
+    else
+        print_and_record_already_installed_msg "${TOOL}"
+    fi
+fi
+
 #------------------------------------------------------------------------------
 # Git Configuration
 #------------------------------------------------------------------------------
