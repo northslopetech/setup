@@ -505,16 +505,11 @@ print_check_msg "${TOOL}"
 
 cat ~/.zshrc | grep "profile.d/autojump.sh" > /dev/null 2>&1
 AUTOJUMP_ZSHRC_IS_SETUP=$?
-
-if [[ ${AUTOJUMP_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_failed_install_msg "${TOOL}" "autojump was not installed" 1 "manual" ""
+if [[ ${AUTOJUMP_ZSHRC_IS_SETUP} -ne 0 ]]; then
+    echo '[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh' >> $HOME/.zshrc
+    print_and_record_newly_installed_msg "${TOOL}"
 else
-    if [[ ${AUTOJUMP_ZSHRC_IS_SETUP} -ne 0 ]]; then
-        echo '[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh' >> $HOME/.zshrc
-        print_and_record_newly_installed_msg "${TOOL}"
-    else
-        print_and_record_already_installed_msg "${TOOL}"
-    fi
+    print_and_record_already_installed_msg "${TOOL}"
 fi
 
 #------------------------------------------------------------------------------
