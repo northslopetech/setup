@@ -338,9 +338,14 @@ emit_setup_started_event &
 
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
-# Create empty ns.config.json if it doesn't exist
+# Create ns.config.json with default structure if it doesn't exist
 if [[ ! -f ${NORTHSLOPE_CONFIG_FILE} ]]; then
-    echo "{}" > ${NORTHSLOPE_CONFIG_FILE}
+    cat > ${NORTHSLOPE_CONFIG_FILE} << 'EOF'
+{
+  "auth": {
+  }
+}
+EOF
 fi
 
 # Remove old versions of script and cache
