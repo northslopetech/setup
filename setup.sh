@@ -370,13 +370,13 @@ OSDK_BRANCH="$1"
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
-# Add `setup` command to .zshrc
-TOOL=setup
+# Add `setup` shortcut to .zshrc
+TOOL="setup alias"
 print_check_msg ${TOOL}
 touch ~/.zshrc
 cat ~/.zshrc | grep "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" > /dev/null 2>&1
-SETUP_ALREADY_INSTALLED=$?
-if [[ ${SETUP_ALREADY_INSTALLED} -ne 0 ]]; then
+SETUP_ALIAS_EXISTS=$?
+if [[ ${SETUP_ALIAS_EXISTS} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     # Remove old setup alias
     TEMP_ZSHRC=${NORTHSLOPE_DIR}/temp-zshrc
@@ -390,31 +390,36 @@ if [[ ${SETUP_ALREADY_INSTALLED} -ne 0 ]]; then
     # Over write the .zshrc
     # cat used here in case .zshrc is symlinked
     cat ${TEMP_ZSHRC} > ${HOME}/.zshrc
-    rm ${TEMP_ZSHRC}
     alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
-    chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
-    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
-    get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
     print_and_record_newly_installed_msg ${TOOL}
-else
-    IS_UPGRADING=1
-    if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
-        current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
-        if [[ "${current_version}" != "`get_latest_version`" ]]; then
-            IS_UPGRADING=0
-        fi
-    fi
-    if [[ ${IS_UPGRADING} -eq 0 ]]; then
-        curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
-        get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
-        print_and_record_upgraded_msg ${TOOL} `get_latest_version`
-    else
-        print_and_record_already_installed_msg ${TOOL}
-    fi
 fi
 
+function download_latest_setup_script {
+    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
+}
 
-chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+# Install or upgrade setup script
+TOOL="setup script"
+print_check_msg ${TOOL}
+if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
+    print_missing_msg ${TOOL}
+    download_latest_setup_script
+    print_and_record_newly_installed_msg ${TOOL} `get_latest_version`
+else
+    IS_UPGRADING=1
+    current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
+    if [[ "${current_version}" != "`get_latest_version`" ]]; then
+        IS_UPGRADING=0
+    fi
+    if [[ ${IS_UPGRADING} -eq 0 ]]; then
+        download_latest_setup_script
+        print_and_record_upgraded_msg ${TOOL} `get_latest_version`
+    else
+        print_and_record_already_installed_msg ${TOOL} `get_latest_version`
+    fi
+fi
 
 #------------------------------------------------------------------------------
 # Package Managers
