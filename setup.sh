@@ -396,6 +396,7 @@ fi
 function download_latest_setup_script {
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
 }
 
 # Install or upgrade setup script
