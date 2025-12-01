@@ -408,11 +408,9 @@ if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VER
     print_and_record_newly_installed_msg ${TOOL} `get_latest_version`
 else
     IS_UPGRADING=1
-    if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
-        current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
-        if [[ "${current_version}" != "`get_latest_version`" ]]; then
-            IS_UPGRADING=0
-        fi
+    current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
+    if [[ "${current_version}" != "`get_latest_version`" ]]; then
+        IS_UPGRADING=0
     fi
     if [[ ${IS_UPGRADING} -eq 0 ]]; then
         download_latest_setup_script
