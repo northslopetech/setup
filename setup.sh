@@ -391,6 +391,7 @@ if [[ ${SETUP_ALIAS_EXISTS} -ne 0 ]]; then
     # cat used here in case .zshrc is symlinked
     cat ${TEMP_ZSHRC} > ${HOME}/.zshrc
     alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
+    print_and_record_newly_installed_msg ${TOOL}
 fi
 
 function download_latest_setup_script {
