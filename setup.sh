@@ -671,6 +671,33 @@ else
     print_and_record_already_installed_msg ${TOOL} ${GH_VERSION} "gh"
 fi
 
+# Ensure a part of the northslopetech organization
+TOOL="github northslopetech org"
+print_check_msg "${TOOL}"
+gh org list | grep northslopetech > /dev/null 2>&1
+GH_IN_NORTHSLOPE_ORG=$?
+if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
+    print_missing_msg "${TOOL}"
+    echo ""
+    echo "⚠️ You are not a member of the northslopetech organization on Github."
+    echo "   If you do not have an invitation, please contact Tam Nguyen (@tnguyen) to be added to the organization."
+    echo "   Press enter to check if you have an invitation for the organization. Return here when you have accepted it."
+    read
+    open 'https://github.com/orgs/northslopetech/invitation'
+    echo  ""
+    echo "   Press enter to continue setup after accepting the invitation."
+    read
+    gh org list | grep northslopetech > /dev/null 2>&1
+    GH_IN_NORTHSLOPE_ORG=$?
+    if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
+        print_failed_install_msg "${TOOL}" "Not a member of northslopetech organization" 1 "gh" ""
+    else
+        print_and_record_newly_installed_msg ${TOOL} "" "gh"
+    fi
+else
+    print_and_record_already_installed_msg ${TOOL} "" "gh"
+fi
+
 #------------------------------------------------------------------------------
 # Northslope Tools
 #------------------------------------------------------------------------------
