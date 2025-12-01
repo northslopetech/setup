@@ -685,7 +685,8 @@ if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
     read
     open 'https://github.com/orgs/northslopetech/invitation'
     echo  ""
-    echo "   Press enter to continue setup after accepting the invitation."
+    echo "   Press enter to continue setup after accepting the invitation (or not)."
+    echo "   If you did not have an invitation, please contact Tam Nguyen (@tnguyen) to be added to the organization."
     read
     gh org list | grep northslopetech > /dev/null 2>&1
     GH_IN_NORTHSLOPE_ORG=$?
