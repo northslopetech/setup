@@ -93,7 +93,7 @@ case "$1" in
         print_usage
         exit 0
         ;;
-    --skip-update|skip)
+    --skip-update|--child|skip)
         SKIP_UPDATE=true
         shift
         ;;
