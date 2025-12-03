@@ -1,0 +1,78 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Custom format to include ns.config.json values
+format = """
+[┌─](bold green)$directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
+$character
+"""
+
+[custom.impl_project_prefix]
+when = '[ -f ns.config.json ]'
+format = "\n[│]($style)"
+style = 'bold green'
+
+# Custom module to display implName
+[custom.impl_name]
+command = 'jq -r ".implName // empty" ns.config.json 2>/dev/null'
+when = '[ -f ns.config.json ]'
+format = '[ impl: $output ]($style)'
+style = 'bold cyan'
+
+# Custom module to display projectName
+[custom.project_name]
+command = 'jq -r ".projectName // empty" ns.config.json 2>/dev/null'
+when = '[ -f ns.config.json ]'
+format = "[ project: $output ]($style)"
+style = 'bold yellow'
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+format = '[$path]($style)[$read_only]($read_only_style) '
+style = 'bold blue'
+
+[git_branch]
+format = '[$symbol$branch(:$remote_branch)]($style) '
+symbol = ''
+truncation_symbol = '...'
+ignore_branches = []
+style = 'bold purple'
+
+[git_status]
+format = '($untracked$staged$conflicted$stashed$deleted$renamed$modified$ahead_behind)'
+conflicted = '[⚔️${count}](bold red)'
+ahead = '[⇡${count}](bold cyan)'
+behind = '[⇣${count}](bold yellow)'
+diverged = '[⇕${count}](bold purple)'
+untracked = '[?](bold red)'
+stashed = ''
+modified = '[!](bold yellow)'
+staged = '[+](bold green)'
+renamed = '[»](bold cyan)'
+deleted = '[✘](bold red)'
+
+[character]
+success_symbol = '[└─>](bold green)'
+error_symbol = '[└─>](bold red)'
+
+[battery]
+full_symbol = "full "
+charging_symbol = "charging "
+discharging_symbol = "discharging "
+unknown_symbol = "unknown "
+empty_symbol = "empty "
+
+[erlang]
+symbol = "erlang "
+
+[fortran]
+symbol = "fortran "
+
+[nodejs]
+symbol = "node "
+
+[pulumi]
+symbol = "pulumi "
+
+[typst]
+symbol = "typst "
