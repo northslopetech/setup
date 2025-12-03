@@ -2,7 +2,7 @@
 
 # Custom format to include ns.config.json values
 format = """
-[┌──](bold green) $directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
+[┌──](bold green) $username:$directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
 $character
 """
 
@@ -24,6 +24,11 @@ command = 'jq -r ".projectName // empty" ns.config.json 2>/dev/null'
 when = '[ -f ns.config.json ]'
 format = "[ project: $output ]($style)"
 style = 'bold yellow'
+
+[username]
+show_always = true
+format = '[$user]($style)'
+style_user = 'bold white'
 
 [directory]
 truncation_length = 3
