@@ -21,6 +21,68 @@ eval "$(direnv hook zsh)"
 # setup script
 alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
 
+# git shortcuts
+alias g="git"
+alias gr="git reset"
+alias gg="git grep"
+alias gpo="git push origin"
+alias gch="git checkout"
+alias gcm="git commit -m"
+alias gcmn="git commit --no-verify -m"
+alias gcma="git commit -a -m"
+alias gcman="git commit -a --no-verify -m"
+alias gc="git commit"
+alias gca="git commit --amend"
+alias gcan="git commit --no-verify --amend"
+alias ga="git add"
+alias gd="git diff"
+alias gds="git diff --staged"
+alias gs="git status"
+alias gpl="git pull origin"
+alias gst="git stash"
+alias gsp="git stash pop"
+
+function hlog {
+    git log --date-order --all --graph --format="%C(green)%h %Creset%C(yellow)%an%Creset %C(blue bold)%ar%Creset %C(red bold)%d%Creset %s" $@
+}
+
+# github pull request opener
+function gpr() {
+    # Ex. https://github.com/ORG/REPO/pull/new/BRANCH
+    # Assumes autoSetupRemote = true
+    git push origin || return 1
+
+    branch=`git branch --show-current`
+    if [[ -z "$branch" ]]; then
+        echo "Error: Could not determine current branch"
+        return 1
+    fi
+
+    # Get remote URL using git command (works from any subdirectory)
+    remote_url=`git config --get remote.origin.url`
+    if [[ -z "$remote_url" ]]; then
+        echo "Error: Could not find remote.origin.url"
+        return 1
+    fi
+
+    # Parse org and repo from both SSH and HTTPS formats
+    # SSH format: git@github.com:org/repo.git
+    # HTTPS format: https://github.com/org/repo.git
+    if [[ $remote_url =~ ^git@github\.com:(.+)/(.+)\.git$ ]]; then
+        org="${match[1]}"
+        repo="${match[2]}"
+    elif [[ $remote_url =~ ^https://github\.com/(.+)/(.+)\.git$ ]]; then
+        org="${match[1]}"
+        repo="${match[2]}"
+    else
+        echo "Error: Could not parse GitHub URL from remote origin"
+        return 1
+    fi
+
+    echo "Opening PR in ${org}/${repo} for ${branch}"
+    open "https://github.com/${org}/${repo}/pull/new/${branch}"
+}
+
 # starship setup
 export STARSHIP_CONFIG=${NORTHSLOPE_STARSHIP_CONFIG_PATH}
 eval "$(starship init zsh)"
