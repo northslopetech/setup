@@ -337,14 +337,6 @@ emit_setup_started_event &
 
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
-# Remove old versions of script and cache
-for f in ${HOME}/.northslope*; do
-    if [[ -d ${f} ]]; then
-        continue
-    fi
-    rm ${f}
-done
-
 #------------------------------------------------------------------------------
 # Parse OSDK Branch options
 #------------------------------------------------------------------------------
@@ -353,35 +345,45 @@ OSDK_BRANCH="$1"
 
 
 #------------------------------------------------------------------------------
+# Shell Extras Setup
+#------------------------------------------------------------------------------
+
+NORTHSLOPE_SHELL_EXTRAS_PATH=${NORTHSLOPE_DIR}/shell-extras.sh
+
+# Download shell-extras.sh to NORTHSLOPE_DIR
+TOOL="shell-extras.sh"
+print_check_msg ${TOOL}
+curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/shell-extras.sh > ${NORTHSLOPE_SHELL_EXTRAS_PATH}
+SHELL_EXTRAS_DOWNLOAD_STATUS=$?
+if [[ ${SHELL_EXTRAS_DOWNLOAD_STATUS} -ne 0 ]]; then
+    print_failed_install_msg "${TOOL}" "Failed to download shell-extras.sh" ${SHELL_EXTRAS_DOWNLOAD_STATUS} "curl" ""
+else
+    chmod +x "${NORTHSLOPE_SHELL_EXTRAS_PATH}"
+    print_and_record_newly_installed_msg "${TOOL}"
+fi
+
+# Ensure .zshrc sources shell-extras.sh
+TOOL="shell-extras in .zshrc"
+print_check_msg "${TOOL}"
+touch ~/.zshrc
+cat ~/.zshrc | grep "source ${NORTHSLOPE_SHELL_EXTRAS_PATH}" > /dev/null 2>&1
+SHELL_EXTRAS_IN_ZSHRC=$?
+if [[ ${SHELL_EXTRAS_IN_ZSHRC} -ne 0 ]]; then
+    print_missing_msg "${TOOL}"
+    echo "" >> ~/.zshrc
+    echo "# Added by Northslope - Source shell extras" >> ~/.zshrc
+    echo "source ${NORTHSLOPE_SHELL_EXTRAS_PATH}" >> ~/.zshrc
+    print_and_record_newly_installed_msg "${TOOL}"
+else
+    print_and_record_already_installed_msg "${TOOL}"
+fi
+
+#------------------------------------------------------------------------------
 # Setup Command Installation
 #------------------------------------------------------------------------------
 
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
-
-# Add `setup` shortcut to .zshrc
-TOOL="setup alias"
-print_check_msg ${TOOL}
-touch ~/.zshrc
-cat ~/.zshrc | grep "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" > /dev/null 2>&1
-SETUP_ALIAS_EXISTS=$?
-if [[ ${SETUP_ALIAS_EXISTS} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    # Remove old setup alias
-    TEMP_ZSHRC=${NORTHSLOPE_DIR}/temp-zshrc
-    cat ${HOME}/.zshrc | fgrep -v "alias setup=\"" | fgrep -v "# Added by Northslope" > ${TEMP_ZSHRC}
-    # Add the new alias
-    echo "" >> ${TEMP_ZSHRC}
-    echo "# Added by Northslope" >> ${TEMP_ZSHRC}
-    echo "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" >> ${TEMP_ZSHRC}
-    # Backup the .zshrc file
-    cp ${HOME}/.zshrc ${HOME}/.zshrc.bak
-    # Over write the .zshrc
-    # cat used here in case .zshrc is symlinked
-    cat ${TEMP_ZSHRC} > ${HOME}/.zshrc
-    alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
-    print_and_record_newly_installed_msg "${TOOL}"
-fi
 
 function download_latest_setup_script {
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
@@ -417,13 +419,9 @@ fi
 # Install Brew
 TOOL=brew
 print_check_msg ${TOOL}
-cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
-missing=$?
 brew --help > /dev/null 2>&1
-usable=$?
-BREW_ALREADY_INSTALLED=0
-if [[ ${missing} -ne 0 || ${usable} -ne 0 ]]; then
-    BREW_ALREADY_INSTALLED=1
+BREW_ALREADY_INSTALLED=$?
+if [[ ${BREW_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
     echo "  ⚠️ Please read the following directions ⚠️"
@@ -436,12 +434,6 @@ if [[ ${missing} -ne 0 || ${usable} -ne 0 ]]; then
     echo "  ⚠️ Please be patient, but if you need to cancel at any time, press Ctrl+C"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     eval $(/opt/homebrew/bin/brew shellenv)
-fi
-
-# Ensure brew shellenv export is in .zshrc if missing
-cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zshrc
 fi
 
 # Verify brew is working after installation
@@ -475,19 +467,6 @@ else
     print_and_record_already_installed_msg "${TOOL}" ${ASDF_VERSION} "brew"
 fi
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-
-# Check asdf is in zshrc
-TOOL="asdf in .zshrc"
-print_check_msg ${TOOL}
-cat ~/.zshrc | grep 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' > /dev/null 2>&1
-ASDF_ZSHRC_ALREADY_INSTALLED=$?
-if [[ ${ASDF_ZSHRC_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> $HOME/.zshrc
-    print_and_record_newly_installed_msg "${TOOL}"
-else
-    print_and_record_already_installed_msg ${TOOL}
-fi
 
 #------------------------------------------------------------------------------
 # Git Configuration
@@ -593,30 +572,6 @@ for asdf_tool in ${asdf_tools[@]}; do
     asdf_install_and_set "${TOOL}" ${version}
 done
 asdf reshim
-
-#------------------------------------------------------------------------------
-# Direnv Hook Setup
-#------------------------------------------------------------------------------
-
-# Set up direnv to be hooked into zsh
-TOOL="direnv hook"
-direnv --version > /dev/null 2>&1
-DIRENV_INSTALLED=$?
-print_check_msg "${TOOL}"
-
-cat ~/.zshrc | grep 'eval "$(direnv hook zsh)"' > /dev/null 2>&1
-DIRENV_HOOK_IS_SETUP=$?
-
-if [[ ${DIRENV_INSTALLED} -ne 0 ]]; then
-    print_failed_install_msg "${TOOL}" "direnv was not installed" ${install_status} "manual" "${version}"
-else
-    if [[ ${DIRENV_HOOK_IS_SETUP} -ne 0 ]]; then
-        echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
-        print_and_record_newly_installed_msg "${TOOL}"
-    else
-        print_and_record_already_installed_msg "${TOOL}"
-    fi
-fi
 
 #------------------------------------------------------------------------------
 # Authentication
