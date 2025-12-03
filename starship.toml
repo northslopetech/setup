@@ -35,7 +35,7 @@ style = 'bold blue'
 format = '[$symbol$branch(:$remote_branch)]($style) '
 symbol = ''
 truncation_symbol = '...'
-ignore_branches = ['master', 'main']
+ignore_branches = []
 style = 'bold purple'
 
 [git_status]
