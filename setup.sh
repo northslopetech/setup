@@ -480,10 +480,10 @@ FZF_INSTALLED=$?
 if [[ ${FZF_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install fzf
-    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $2}' || echo "")
+    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $1}' || echo "")
     print_and_record_newly_installed_msg "${TOOL}" ${FZF_VERSION} "brew"
 else
-    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $2}' || echo "")
+    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $1}' || echo "")
     print_and_record_already_installed_msg "${TOOL}" ${FZF_VERSION} "brew"
 fi
 
