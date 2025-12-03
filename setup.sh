@@ -457,6 +457,21 @@ else
 fi
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
+# Install autojump
+TOOL=autojump
+print_check_msg ${TOOL}
+autojump --version > /dev/null 2>&1
+AUTOJUMP_ALREADY_INSTALLED=$?
+if [[ ${AUTOJUMP_ALREADY_INSTALLED} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install autojump
+    AUTOJUMP_VERSION=$(autojump --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_newly_installed_msg ${TOOL} ${AUTOJUMP_VERSION} "brew"
+else
+    AUTOJUMP_VERSION=$(autojump --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_already_installed_msg ${TOOL} ${AUTOJUMP_VERSION} "brew"
+fi
+
 #------------------------------------------------------------------------------
 # Git Configuration
 #------------------------------------------------------------------------------
