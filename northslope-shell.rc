@@ -43,13 +43,30 @@ function hlog {
 
 # github pull request opener
 function gpr() {
+    set -e
+
     # Ex. https://github.com/ORG/REPO/pull/new/BRANCH
     # Assumes autoSetupRemote = true
     git push origin
     branch=`git branch --show-current`
-    origin=`cat .git/config | fgrep -A 2 "\"origin\"" | fgrep url | cut -d':' -f 2`
-    org=`echo $origin | cut -d '/' -f 1`
-    repo=`echo ${origin%%.*} | cut -d '/' -f 2`
+
+    # Get remote URL using git command (works from any subdirectory)
+    remote_url=`git config --get remote.origin.url`
+
+    # Parse org and repo from both SSH and HTTPS formats
+    # SSH format: git@github.com:org/repo.git
+    # HTTPS format: https://github.com/org/repo.git
+    if [[ $remote_url =~ ^git@github\.com:(.+)/(.+)\.git$ ]]; then
+        org="${match[1]}"
+        repo="${match[2]}"
+    elif [[ $remote_url =~ ^https://github\.com/(.+)/(.+)\.git$ ]]; then
+        org="${match[1]}"
+        repo="${match[2]}"
+    else
+        echo "Error: Could not parse GitHub URL from remote origin"
+        return 1
+    fi
+
     echo "Opening PR in ${org}/${repo} for ${branch}"
     open "https://github.com/${org}/${repo}/pull/new/${branch}"
 }
