@@ -43,15 +43,22 @@ function hlog {
 
 # github pull request opener
 function gpr() {
-    set -e
-
     # Ex. https://github.com/ORG/REPO/pull/new/BRANCH
     # Assumes autoSetupRemote = true
-    git push origin
+    git push origin || return 1
+
     branch=`git branch --show-current`
+    if [[ -z "$branch" ]]; then
+        echo "Error: Could not determine current branch"
+        return 1
+    fi
 
     # Get remote URL using git command (works from any subdirectory)
     remote_url=`git config --get remote.origin.url`
+    if [[ -z "$remote_url" ]]; then
+        echo "Error: Could not find remote.origin.url"
+        return 1
+    fi
 
     # Parse org and repo from both SSH and HTTPS formats
     # SSH format: git@github.com:org/repo.git
