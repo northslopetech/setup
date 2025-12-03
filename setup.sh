@@ -383,7 +383,7 @@ function download_latest_setup_script {
 # Install or upgrade setup script
 TOOL="setup script"
 print_check_msg ${TOOL}
-if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
+if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ! -e ${NORTHSLOPE_SHELL_RC_PATH} ]]; then
     print_missing_msg ${TOOL}
     download_latest_setup_script
     print_and_record_newly_installed_msg "${TOOL}" `get_latest_version`
