@@ -2,7 +2,7 @@
 
 # Custom format to include ns.config.json values
 format = """
-[┌─](bold green)$directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
+[┌──](bold green) $directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
 $character
 """
 
@@ -53,7 +53,7 @@ deleted = '[✘](bold red)'
 
 [character]
 success_symbol = '[└─>](bold green)'
-error_symbol = '[└─>](bold red)'
+error_symbol = '[└─✘](bold red)'
 
 [battery]
 full_symbol = "full "
