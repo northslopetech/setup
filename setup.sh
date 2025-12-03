@@ -604,7 +604,7 @@ direnv --version > /dev/null 2>&1
 DIRENV_INSTALLED=$?
 print_check_msg "${TOOL}"
 
-cat ~/.zshrc | grep "eval \"$(direnv hook zsh)\"" > /dev/null 2>&1
+cat ~/.zshrc | grep 'eval "$(direnv hook zsh)"' > /dev/null 2>&1
 DIRENV_HOOK_IS_SETUP=$?
 
 if [[ ${DIRENV_INSTALLED} -ne 0 ]]; then
