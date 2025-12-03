@@ -401,6 +401,21 @@ else
     fi
 fi
 
+# Install starship
+TOOL=starship
+print_check_msg ${TOOL}
+starship --version > /dev/null 2>&1
+STARSHIP_INSTALLED=$?
+if [[ ${STARSHIP_INSTALLED} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install starship
+    STARSHIP_VERSION=$(starship --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_newly_installed_msg "${TOOL}" ${STARSHIP_VERSION} "manual"
+else
+    STARSHIP_VERSION=$(starship --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_already_installed_msg "${TOOL}" ${STARSHIP_VERSION} "manual"
+fi
+
 #------------------------------------------------------------------------------
 # Package Managers
 #------------------------------------------------------------------------------
