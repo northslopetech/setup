@@ -472,6 +472,21 @@ else
     print_and_record_already_installed_msg ${TOOL} ${AUTOJUMP_VERSION} "brew"
 fi
 
+# Install fzf
+TOOL=fzf
+print_check_msg ${TOOL}
+fzf --version > /dev/null 2>&1
+FZF_INSTALLED=$?
+if [[ ${FZF_INSTALLED} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install fzf
+    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_newly_installed_msg "${TOOL}" ${FZF_VERSION} "brew"
+else
+    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_already_installed_msg "${TOOL}" ${FZF_VERSION} "brew"
+fi
+
 # Install starship
 TOOL=starship
 print_check_msg ${TOOL}
