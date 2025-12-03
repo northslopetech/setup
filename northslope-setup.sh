@@ -107,7 +107,7 @@ esac
 # Check if local version matches remote version, and self-update if needed
 if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
     if [[ -z "${IS_CHILD}" ]]; then
-        echo "Updating self to latest version ($(get_latest_version))..."
+        echo "Using latest version ($(get_latest_version))..."
         # Download the new northslope-setup.sh
         curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh -o "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
         curl_exit_code=$?
@@ -118,9 +118,6 @@ if [[ -z "${SKIP_UPDATE}" ]] && ! is_northslope_script_up_to_date; then
             echo "${error_msg}"
             exit 1
         fi
-
-        # Update version file
-        get_latest_version > "${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}"
 
         # Make executable and re-execute with the new version (exec replaces current process)
         chmod +x "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}"
