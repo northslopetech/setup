@@ -367,13 +367,13 @@ else
 fi
 
 #------------------------------------------------------------------------------
-# Setup Command Installation
+# Shell Commands Installation
 #------------------------------------------------------------------------------
 
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
-function download_latest_setup_script {
+function download_latest_shell {
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-shell.rc > ${NORTHSLOPE_SHELL_RC_PATH}
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
@@ -381,11 +381,11 @@ function download_latest_setup_script {
 }
 
 # Install or upgrade setup script
-TOOL="setup script"
+TOOL="shell commands"
 print_check_msg ${TOOL}
 if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ! -e ${NORTHSLOPE_SHELL_RC_PATH} ]]; then
     print_missing_msg ${TOOL}
-    download_latest_setup_script
+    download_latest_shell
     print_and_record_newly_installed_msg "${TOOL}" `get_latest_version`
 else
     IS_UPGRADING=1
@@ -394,7 +394,7 @@ else
         IS_UPGRADING=0
     fi
     if [[ ${IS_UPGRADING} -eq 0 ]]; then
-        download_latest_setup_script
+        download_latest_shell
         print_and_record_upgraded_msg "${TOOL}" `get_latest_version`
     else
         print_and_record_already_installed_msg "${TOOL}" `get_latest_version`
