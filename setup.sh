@@ -584,6 +584,21 @@ else
     print_and_record_already_installed_msg "${TOOL}" ${CLAUDE_VERSION} "brew"
 fi
 
+# Install gh code
+TOOL=gh
+print_check_msg ${TOOL}
+gh --version > /dev/null 2>&1
+GH_ALREADY_INSTALLED=$?
+if [[ ${GH_ALREADY_INSTALLED} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install gh
+    GH_VERSION=$(gh --version 2>/dev/null | awk '{print $3}' || echo "")
+    print_and_record_newly_installed_msg "${TOOL}" ${GH_VERSION} "brew"
+else
+    GH_VERSION=$(gh --version 2>/dev/null | awk '{print $3}' || echo "")
+    print_and_record_already_installed_msg "${TOOL}" ${GH_VERSION} "brew"
+fi
+
 #------------------------------------------------------------------------------
 # Programming Languages & Tools (via asdf)
 #------------------------------------------------------------------------------
