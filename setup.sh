@@ -348,31 +348,19 @@ OSDK_BRANCH="$1"
 # Shell Extras Setup
 #------------------------------------------------------------------------------
 
-NORTHSLOPE_SHELL_EXTRAS_PATH=${NORTHSLOPE_DIR}/shell-extras.sh
+NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
 
-# Download shell-extras.sh to NORTHSLOPE_DIR
-TOOL="shell-extras.sh"
-print_check_msg ${TOOL}
-curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/shell-extras.sh > ${NORTHSLOPE_SHELL_EXTRAS_PATH}
-SHELL_EXTRAS_DOWNLOAD_STATUS=$?
-if [[ ${SHELL_EXTRAS_DOWNLOAD_STATUS} -ne 0 ]]; then
-    print_failed_install_msg "${TOOL}" "Failed to download shell-extras.sh" ${SHELL_EXTRAS_DOWNLOAD_STATUS} "curl" ""
-else
-    chmod +x "${NORTHSLOPE_SHELL_EXTRAS_PATH}"
-    print_and_record_newly_installed_msg "${TOOL}"
-fi
-
-# Ensure .zshrc sources shell-extras.sh
-TOOL="shell-extras in .zshrc"
+# Ensure .zshrc sources northslope-shell.rc
+TOOL="northslope-shell.rc in .zshrc"
 print_check_msg "${TOOL}"
 touch ~/.zshrc
-cat ~/.zshrc | grep "source ${NORTHSLOPE_SHELL_EXTRAS_PATH}" > /dev/null 2>&1
+cat ~/.zshrc | grep "source ${NORTHSLOPE_SHELL_RC_PATH}" > /dev/null 2>&1
 SHELL_EXTRAS_IN_ZSHRC=$?
 if [[ ${SHELL_EXTRAS_IN_ZSHRC} -ne 0 ]]; then
     print_missing_msg "${TOOL}"
     echo "" >> ~/.zshrc
-    echo "# Added by Northslope - Source shell extras" >> ~/.zshrc
-    echo "source ${NORTHSLOPE_SHELL_EXTRAS_PATH}" >> ~/.zshrc
+    echo "# Added by Northslope" >> ~/.zshrc
+    echo "source ${NORTHSLOPE_SHELL_RC_PATH}" >> ~/.zshrc
     print_and_record_newly_installed_msg "${TOOL}"
 else
     print_and_record_already_installed_msg "${TOOL}"
@@ -386,6 +374,7 @@ NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
 function download_latest_setup_script {
+    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-shell.rc > ${NORTHSLOPE_SHELL_RC_PATH}
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
