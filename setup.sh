@@ -603,7 +603,7 @@ asdf_tools=(
 for asdf_tool in ${asdf_tools[@]}; do
     tool=${asdf_tool%__*}
     version=${asdf_tool#*__}
-    asdf_install_and_set "${TOOL}" ${version}
+    asdf_install_and_set "${tool}" ${version}
 done
 asdf reshim
 
