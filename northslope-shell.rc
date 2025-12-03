@@ -19,3 +19,4 @@ alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
 
 # starship setup
 export STARSHIP_CONFIG=${NORTHSLOPE_STARSHIP_CONFIG_PATH}
+eval "$(starship init zsh)"
