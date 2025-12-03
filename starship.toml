@@ -2,7 +2,7 @@
 
 # Custom format to include ns.config.json values
 format = """
-[┌──](bold green) $username:$directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
+[┌──](bold green) $username $directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
 $character
 """
 
