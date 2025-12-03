@@ -415,9 +415,9 @@ else
     fi
     if [[ ${IS_UPGRADING} -eq 0 ]]; then
         download_latest_setup_script
-        print_and_record_upgraded_msg ${TOOL} `get_latest_version`
+        print_and_record_upgraded_msg "${TOOL}" `get_latest_version`
     else
-        print_and_record_already_installed_msg ${TOOL} `get_latest_version`
+        print_and_record_already_installed_msg "${TOOL}" `get_latest_version`
     fi
 fi
 
@@ -459,13 +459,13 @@ fi
 brew_error=$(brew --help 2>&1)
 brew_exit_code=$?
 if [[ ${brew_exit_code} -ne 0 ]]; then
-    print_failed_install_msg ${TOOL} "Brew installation failed or is not in PATH: ${brew_error}" ${brew_exit_code} "brew" ""
+    print_failed_install_msg "${TOOL}" "Brew installation failed or is not in PATH: ${brew_error}" ${brew_exit_code} "brew" ""
     echo "Cannot go on without brew. Please contact @tnguyen."
     exit 1
 else
     BREW_VERSION=$(brew --version 2>/dev/null | head -1 | awk '{print $2}' || echo "")
     if [[ ${BREW_ALREADY_INSTALLED} -eq 0 ]]; then
-        print_and_record_already_installed_msg ${TOOL} ${BREW_VERSION} "brew"
+        print_and_record_already_installed_msg "${TOOL}" ${BREW_VERSION} "brew"
     else
         print_and_record_newly_installed_msg "${TOOL}" ${BREW_VERSION} "brew"
     fi
@@ -483,7 +483,7 @@ if [[ ${ASDF_ALREADY_INSTALLED} -ne 0 ]]; then
     print_and_record_newly_installed_msg "${TOOL}" ${ASDF_VERSION} "brew"
 else
     ASDF_VERSION=$(asdf --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${ASDF_VERSION} "brew"
+    print_and_record_already_installed_msg "${TOOL}" ${ASDF_VERSION} "brew"
 fi
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
@@ -518,7 +518,7 @@ if [[ ${GIT_NAME_ALREADY_SET} -ne 0 ]]; then
     git config --global user.name "${git_name}"
     print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
-    print_and_record_already_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
 fi
 
 # Check for git config email
@@ -534,7 +534,7 @@ if [[ ${GIT_EMAIL_ALREADY_SET} -ne 0 ]]; then
     git config --global user.email "${git_email}"
     print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
-    print_and_record_already_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
 fi
 
 # Check for git config push.autoSetupRemote
@@ -547,7 +547,7 @@ if [[ ${GIT_PUSH_ALREADY_SET} -ne 0 ]]; then
     git config --global push.autoSetupRemote true
     print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
-    print_and_record_already_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
 fi
 
 #------------------------------------------------------------------------------
@@ -564,7 +564,7 @@ if [[ ! -d "/Applications/Cursor.app" ]]; then
     print_and_record_newly_installed_msg "${TOOL}" ${CURSOR_VERSION} "brew"
 else
     CURSOR_VERSION=$(plutil -p /Applications/Cursor.app/Contents/Info.plist 2>/dev/null | grep CFBundleShortVersionString | awk -F'"' '{print $4}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${CURSOR_VERSION} "brew"
+    print_and_record_already_installed_msg "${TOOL}" ${CURSOR_VERSION} "brew"
 fi
 
 # Install claude code
@@ -579,7 +579,7 @@ if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
     print_and_record_newly_installed_msg "${TOOL}" ${CLAUDE_VERSION} "brew"
 else
     CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${CLAUDE_VERSION} "brew"
+    print_and_record_already_installed_msg "${TOOL}" ${CLAUDE_VERSION} "brew"
 fi
 
 #------------------------------------------------------------------------------
@@ -601,7 +601,7 @@ asdf_tools=(
 for asdf_tool in ${asdf_tools[@]}; do
     tool=${asdf_tool%__*}
     version=${asdf_tool#*__}
-    asdf_install_and_set ${tool} ${version}
+    asdf_install_and_set "${TOOL}" ${version}
 done
 asdf reshim
 
@@ -668,7 +668,7 @@ if [[ ${GH_AUTH_ALREADY_SET} -ne 0 ]]; then
     fi
 else
     GH_VERSION=$(gh --version 2>/dev/null | head -1 | awk '{print $3}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${GH_VERSION} "gh"
+    print_and_record_already_installed_msg "${TOOL}" ${GH_VERSION} "gh"
 fi
 
 # Ensure a part of the northslopetech organization
@@ -696,7 +696,7 @@ if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
         print_and_record_newly_installed_msg "${TOOL}" "" "gh"
     fi
 else
-    print_and_record_already_installed_msg ${TOOL} "" "gh"
+    print_and_record_already_installed_msg "${TOOL}" "" "gh"
 fi
 
 #------------------------------------------------------------------------------
@@ -723,9 +723,9 @@ if [[ "${OSDK_BRANCH}" == "" ]]; then
         NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
         if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
             if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
-                print_and_record_upgraded_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+                print_and_record_upgraded_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
             else
-                print_and_record_already_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+                print_and_record_already_installed_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
             fi
         else
             print_and_record_newly_installed_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
