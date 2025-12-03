@@ -1,0 +1,17 @@
+#!/bin/zsh
+# Northslope Shell Extras
+NORTHSLOPE_DIR=${HOME}/.northslope
+NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
+NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
+
+# Homebrew
+eval $(/opt/homebrew/bin/brew shellenv)
+
+# asdf
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
+# direnv
+eval "$(direnv hook zsh)"
+
+# setup script
+alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"

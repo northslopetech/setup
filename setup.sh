@@ -337,14 +337,6 @@ emit_setup_started_event &
 
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
-# Remove old versions of script and cache
-for f in ${HOME}/.northslope*; do
-    if [[ -d ${f} ]]; then
-        continue
-    fi
-    rm ${f}
-done
-
 #------------------------------------------------------------------------------
 # Parse OSDK Branch options
 #------------------------------------------------------------------------------
@@ -353,57 +345,61 @@ OSDK_BRANCH="$1"
 
 
 #------------------------------------------------------------------------------
-# Setup Command Installation
+# Shell Extras Setup
+#------------------------------------------------------------------------------
+
+NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
+
+# Ensure .zshrc sources northslope-shell.rc
+TOOL="northslope-shell.rc in .zshrc"
+print_check_msg "${TOOL}"
+touch ~/.zshrc
+cat ~/.zshrc | grep "source ${NORTHSLOPE_SHELL_RC_PATH}" > /dev/null 2>&1
+SHELL_EXTRAS_IN_ZSHRC=$?
+if [[ ${SHELL_EXTRAS_IN_ZSHRC} -ne 0 ]]; then
+    print_missing_msg "${TOOL}"
+    echo "" >> ~/.zshrc
+    echo "# Added by Northslope" >> ~/.zshrc
+    echo "source ${NORTHSLOPE_SHELL_RC_PATH}" >> ~/.zshrc
+    print_and_record_newly_installed_msg "${TOOL}"
+else
+    print_and_record_already_installed_msg "${TOOL}"
+fi
+
+#------------------------------------------------------------------------------
+# Shell Commands Installation
 #------------------------------------------------------------------------------
 
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
-# Add `setup` command to .zshrc
-TOOL=setup
-print_check_msg ${TOOL}
-touch ~/.zshrc
-cat ~/.zshrc | grep "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" > /dev/null 2>&1
-SETUP_ALREADY_INSTALLED=$?
-if [[ ${SETUP_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    # Remove old setup alias
-    TEMP_ZSHRC=${NORTHSLOPE_DIR}/temp-zshrc
-    cat ${HOME}/.zshrc | fgrep -v "alias setup=\"" | fgrep -v "# Added by Northslope" > ${TEMP_ZSHRC}
-    # Add the new alias
-    echo "" >> ${TEMP_ZSHRC}
-    echo "# Added by Northslope" >> ${TEMP_ZSHRC}
-    echo "alias setup=\"${NORTHSLOPE_SETUP_SCRIPT_PATH}\"" >> ${TEMP_ZSHRC}
-    # Backup the .zshrc file
-    cp ${HOME}/.zshrc ${HOME}/.zshrc.bak
-    # Over write the .zshrc
-    # cat used here in case .zshrc is symlinked
-    cat ${TEMP_ZSHRC} > ${HOME}/.zshrc
-    rm ${TEMP_ZSHRC}
-    alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
-    chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+function download_latest_shell {
+    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-shell.rc > ${NORTHSLOPE_SHELL_RC_PATH}
     curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
-    get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
-    print_and_record_newly_installed_msg ${TOOL}
+    chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
+}
+
+# Install or upgrade setup script
+TOOL="shell commands"
+print_check_msg ${TOOL}
+if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ! -e ${NORTHSLOPE_SHELL_RC_PATH} ]]; then
+    print_missing_msg ${TOOL}
+    download_latest_shell
+    print_and_record_newly_installed_msg "${TOOL}" `get_latest_version`
 else
     IS_UPGRADING=1
-    if [[ -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} ]]; then
-        current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
-        if [[ "${current_version}" != "`get_latest_version`" ]]; then
-            IS_UPGRADING=0
-        fi
+    current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
+    if [[ "${current_version}" != "`get_latest_version`" ]]; then
+        IS_UPGRADING=0
     fi
     if [[ ${IS_UPGRADING} -eq 0 ]]; then
-        curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
-        get_latest_version > $NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH
-        print_and_record_upgraded_msg ${TOOL} `get_latest_version`
+        download_latest_shell
+        print_and_record_upgraded_msg "${TOOL}" `get_latest_version`
     else
-        print_and_record_already_installed_msg ${TOOL}
+        print_and_record_already_installed_msg "${TOOL}" `get_latest_version`
     fi
 fi
-
-
-chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
 
 #------------------------------------------------------------------------------
 # Package Managers
@@ -412,13 +408,9 @@ chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
 # Install Brew
 TOOL=brew
 print_check_msg ${TOOL}
-cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
-missing=$?
 brew --help > /dev/null 2>&1
-usable=$?
-BREW_ALREADY_INSTALLED=0
-if [[ ${missing} -ne 0 || ${usable} -ne 0 ]]; then
-    BREW_ALREADY_INSTALLED=1
+BREW_ALREADY_INSTALLED=$?
+if [[ ${BREW_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     echo "   ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  "
     echo "  ⚠️ Please read the following directions ⚠️"
@@ -433,25 +425,19 @@ if [[ ${missing} -ne 0 || ${usable} -ne 0 ]]; then
     eval $(/opt/homebrew/bin/brew shellenv)
 fi
 
-# Ensure brew shellenv export is in .zshrc if missing
-cat ~/.zshrc | grep "brew shellenv" > /dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zshrc
-fi
-
 # Verify brew is working after installation
 brew_error=$(brew --help 2>&1)
 brew_exit_code=$?
 if [[ ${brew_exit_code} -ne 0 ]]; then
-    print_failed_install_msg ${TOOL} "Brew installation failed or is not in PATH: ${brew_error}" ${brew_exit_code} "brew" ""
+    print_failed_install_msg "${TOOL}" "Brew installation failed or is not in PATH: ${brew_error}" ${brew_exit_code} "brew" ""
     echo "Cannot go on without brew. Please contact @tnguyen."
     exit 1
 else
     BREW_VERSION=$(brew --version 2>/dev/null | head -1 | awk '{print $2}' || echo "")
     if [[ ${BREW_ALREADY_INSTALLED} -eq 0 ]]; then
-        print_and_record_already_installed_msg ${TOOL} ${BREW_VERSION} "brew"
+        print_and_record_already_installed_msg "${TOOL}" ${BREW_VERSION} "brew"
     else
-        print_and_record_newly_installed_msg ${TOOL} ${BREW_VERSION} "brew"
+        print_and_record_newly_installed_msg "${TOOL}" ${BREW_VERSION} "brew"
     fi
 fi
 
@@ -464,10 +450,10 @@ if [[ ${ASDF_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install asdf
     ASDF_VERSION=$(asdf --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_newly_installed_msg ${TOOL} ${ASDF_VERSION} "brew"
+    print_and_record_newly_installed_msg "${TOOL}" ${ASDF_VERSION} "brew"
 else
     ASDF_VERSION=$(asdf --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${ASDF_VERSION} "brew"
+    print_and_record_already_installed_msg "${TOOL}" ${ASDF_VERSION} "brew"
 fi
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
@@ -528,9 +514,9 @@ if [[ ${GIT_NAME_ALREADY_SET} -ne 0 ]]; then
     echo "ex. Tam Nguyen"
     read git_name
     git config --global user.name "${git_name}"
-    print_and_record_newly_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
-    print_and_record_already_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
 fi
 
 # Check for git config email
@@ -544,9 +530,9 @@ if [[ ${GIT_EMAIL_ALREADY_SET} -ne 0 ]]; then
     echo "ex. test@northslopetech.com"
     read git_email
     git config --global user.email "${git_email}"
-    print_and_record_newly_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
-    print_and_record_already_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
 fi
 
 # Check for git config push.autoSetupRemote
@@ -557,9 +543,9 @@ GIT_PUSH_ALREADY_SET=$?
 if [[ ${GIT_PUSH_ALREADY_SET} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     git config --global push.autoSetupRemote true
-    print_and_record_newly_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
-    print_and_record_already_installed_msg ${TOOL} ${GIT_VERSION}
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
 fi
 
 #------------------------------------------------------------------------------
@@ -573,10 +559,10 @@ if [[ ! -d "/Applications/Cursor.app" ]]; then
     print_missing_msg ${TOOL}
     brew install --cask cursor
     CURSOR_VERSION=$(plutil -p /Applications/Cursor.app/Contents/Info.plist 2>/dev/null | grep CFBundleShortVersionString | awk -F'"' '{print $4}' || echo "")
-    print_and_record_newly_installed_msg ${TOOL} ${CURSOR_VERSION} "brew"
+    print_and_record_newly_installed_msg "${TOOL}" ${CURSOR_VERSION} "brew"
 else
     CURSOR_VERSION=$(plutil -p /Applications/Cursor.app/Contents/Info.plist 2>/dev/null | grep CFBundleShortVersionString | awk -F'"' '{print $4}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${CURSOR_VERSION} "brew"
+    print_and_record_already_installed_msg "${TOOL}" ${CURSOR_VERSION} "brew"
 fi
 
 # Install claude code
@@ -588,10 +574,10 @@ if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install --cask claude-code
     CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_newly_installed_msg ${TOOL} ${CLAUDE_VERSION} "brew"
+    print_and_record_newly_installed_msg "${TOOL}" ${CLAUDE_VERSION} "brew"
 else
     CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${CLAUDE_VERSION} "brew"
+    print_and_record_already_installed_msg "${TOOL}" ${CLAUDE_VERSION} "brew"
 fi
 
 #------------------------------------------------------------------------------
@@ -613,33 +599,9 @@ asdf_tools=(
 for asdf_tool in ${asdf_tools[@]}; do
     tool=${asdf_tool%__*}
     version=${asdf_tool#*__}
-    asdf_install_and_set ${tool} ${version}
+    asdf_install_and_set "${TOOL}" ${version}
 done
 asdf reshim
-
-#------------------------------------------------------------------------------
-# Direnv Hook Setup
-#------------------------------------------------------------------------------
-
-# Set up direnv to be hooked into zsh
-TOOL="direnv hook"
-direnv --version > /dev/null 2>&1
-DIRENV_INSTALLED=$?
-print_check_msg "${TOOL}"
-
-cat ~/.zshrc | grep "eval \"$(direnv hook zsh)\"" > /dev/null 2>&1
-DIRENV_HOOK_IS_SETUP=$?
-
-if [[ ${DIRENV_INSTALLED} -ne 0 ]]; then
-    print_failed_install_msg "${TOOL}" "direnv was not installed" ${install_status} "manual" "${version}"
-else
-    if [[ ${DIRENV_HOOK_IS_SETUP} -ne 0 ]]; then
-        echo 'eval "$(direnv hook zsh)"' >> $HOME/.zshrc
-        print_and_record_newly_installed_msg "${TOOL}"
-    else
-        print_and_record_already_installed_msg "${TOOL}"
-    fi
-fi
 
 #------------------------------------------------------------------------------
 # Authentication
@@ -674,13 +636,41 @@ if [[ ${GH_AUTH_ALREADY_SET} -ne 0 ]]; then
     GH_VERSION=$(gh --version 2>/dev/null | head -1 | awk '{print $3}' || echo "")
     if [[ ${gh_auth_status} -eq 0 ]]; then
         echo "'gh auth' Authorized ✅"
-        print_and_record_newly_installed_msg ${TOOL} ${GH_VERSION} "gh"
+        print_and_record_newly_installed_msg "${TOOL}" ${GH_VERSION} "gh"
     else
         print_failed_install_msg "${TOOL}" "gh auth login failed or was interrupted" ${gh_auth_status} "system" "${GH_VERSION}"
     fi
 else
     GH_VERSION=$(gh --version 2>/dev/null | head -1 | awk '{print $3}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${GH_VERSION} "gh"
+    print_and_record_already_installed_msg "${TOOL}" ${GH_VERSION} "gh"
+fi
+
+# Ensure a part of the northslopetech organization
+TOOL="github northslopetech org"
+print_check_msg "${TOOL}"
+gh org list | grep northslopetech > /dev/null 2>&1
+GH_IN_NORTHSLOPE_ORG=$?
+if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
+    print_missing_msg "${TOOL}"
+    echo ""
+    echo "⚠️ You are not a member of the northslopetech organization on Github."
+    echo "   If you do not have an invitation, please contact Tam Nguyen (@tnguyen) to be added to the organization."
+    echo "   Press enter to check if you have an invitation for the organization. Return here when you have accepted it."
+    read
+    open 'https://github.com/orgs/northslopetech/invitation'
+    echo  ""
+    echo "   Press enter to continue setup after accepting the invitation (or not)."
+    echo "   If you did not have an invitation, please contact Tam Nguyen (@tnguyen) to be added to the organization."
+    read
+    gh org list | grep northslopetech > /dev/null 2>&1
+    GH_IN_NORTHSLOPE_ORG=$?
+    if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
+        print_failed_install_msg "${TOOL}" "Not a member of northslopetech organization" 1 "gh" ""
+    else
+        print_and_record_newly_installed_msg "${TOOL}" "" "gh"
+    fi
+else
+    print_and_record_already_installed_msg "${TOOL}" "" "gh"
 fi
 
 #------------------------------------------------------------------------------
@@ -707,12 +697,12 @@ if [[ "${OSDK_BRANCH}" == "" ]]; then
         NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
         if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
             if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
-                print_and_record_upgraded_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+                print_and_record_upgraded_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
             else
-                print_and_record_already_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+                print_and_record_already_installed_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
             fi
         else
-            print_and_record_newly_installed_msg ${TOOL} ${NEW_OSDK_VERSION} "npm"
+            print_and_record_newly_installed_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
         fi
     else
         print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
