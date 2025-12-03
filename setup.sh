@@ -333,20 +333,9 @@ function asdf_install_and_set {
 #------------------------------------------------------------------------------
 
 NORTHSLOPE_DIR=${HOME}/.northslope
-NORTHSLOPE_CONFIG_FILE=${NORTHSLOPE_DIR}/ns.config.json
 emit_setup_started_event &
 
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
-
-# Create ns.config.json with default structure if it doesn't exist
-if [[ ! -f ${NORTHSLOPE_CONFIG_FILE} ]]; then
-    cat > ${NORTHSLOPE_CONFIG_FILE} << 'EOF'
-{
-  "auth": {
-  }
-}
-EOF
-fi
 
 # Remove old versions of script and cache
 for f in ${HOME}/.northslope*; do
