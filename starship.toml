@@ -1,28 +1,79 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
-[battery]
-full_symbol = "• "
-charging_symbol = "⇡ "
-discharging_symbol = "⇣ "
-unknown_symbol = "❓ "
-empty_symbol = "❗ "
+# Custom format to include ns.config.json values
+format = """
+[┌─](bold green)$directory$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}(bold green)
+$character
+"""
 
-[erlang]
-symbol = "ⓔ "
+[custom.impl_project_prefix]
+when = '[ -f ns.config.json ]'
+format = "\n[│]($style)"
+style = 'bold green'
 
-[fortran]
-symbol = "F "
+# Custom module to display implName
+[custom.impl_name]
+command = 'jq -r ".implName // empty" ns.config.json 2>/dev/null'
+when = '[ -f ns.config.json ]'
+format = '[ impl: $output ]($style)'
+style = 'bold cyan'
 
-[nodejs]
-symbol = "[⬢](bold green) "
+# Custom module to display projectName
+[custom.project_name]
+command = 'jq -r ".projectName // empty" ns.config.json 2>/dev/null'
+when = '[ -f ns.config.json ]'
+format = "[ project: $output ]($style)"
+style = 'bold yellow'
 
-[pulumi]
-symbol = "🧊 "
-
-[typst]
-symbol = "t "
-
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+format = '[$path]($style)[$read_only]($read_only_style) '
+style = 'bold blue'
 
 [git_branch]
-truncation_symbol = ''
+format = '[$symbol$branch(:$remote_branch)]($style) '
+symbol = ''
+truncation_symbol = '...'
 ignore_branches = ['master', 'main']
+style = 'bold purple'
+
+[git_status]
+format = '([$all_status$ahead_behind]($style) )'
+style = 'bold red'
+conflicted = 'conflict'
+ahead = 'ahead ${count}'
+behind = 'behind ${count}'
+diverged = 'diverged'
+untracked = 'untracked'
+stashed = 'stashed'
+modified = 'modified'
+staged = 'staged'
+renamed = 'renamed'
+deleted = 'deleted'
+
+[character]
+success_symbol = '[└─>](bold green)'
+error_symbol = '[└─>](bold red)'
+
+[battery]
+full_symbol = "full "
+charging_symbol = "charging "
+discharging_symbol = "discharging "
+unknown_symbol = "unknown "
+empty_symbol = "empty "
+
+[erlang]
+symbol = "erlang "
+
+[fortran]
+symbol = "fortran "
+
+[nodejs]
+symbol = "node "
+
+[pulumi]
+symbol = "pulumi "
+
+[typst]
+symbol = "typst "
