@@ -727,10 +727,10 @@ else
     echo "npm uninstall -g ns-cli" >> ${NS_CLI_INSTALL_LOG} 2>&1
     npm uninstall -g ns-cli >> ${NS_CLI_INSTALL_LOG} 2>&1
 
-    echo "asdf which ns-cli" >> ${NS_CLI_INSTALL_LOG} 2>&1
-    asdf which ns-cli >> ${NS_CLI_INSTALL_LOG} 2>&1
+    echo "asdf which ns" >> ${NS_CLI_INSTALL_LOG} 2>&1
+    asdf which ns >> ${NS_CLI_INSTALL_LOG} 2>&1
 
-    current_ns_cli_path=`asdf which ns-cli 2>/dev/null`
+    current_ns_cli_path=`asdf which ns 2>/dev/null`
     if [[ "${current_ns_cli_path}" != "" ]]; then
         echo "rm \"${current_ns_cli_path}\"" >> ${NS_CLI_INSTALL_LOG} 2>&1
         rm "${current_ns_cli_path}"  >> ${NS_CLI_INSTALL_LOG} 2>&1
