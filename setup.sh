@@ -339,10 +339,10 @@ emit_setup_started_event &
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
 #------------------------------------------------------------------------------
-# Parse OSDK Branch options
+# Parse NS CLI Branch options
 #------------------------------------------------------------------------------
 
-OSDK_BRANCH="$1"
+NS_CLI_BRANCH="$1"
 
 
 #------------------------------------------------------------------------------
@@ -721,7 +721,7 @@ else
     LOCAL_NS_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/ns-cli
 
     # Create a log file for this installation
-    NS_CLI_INSTALL_LOG="${NORTHSLOPE_DIR}/osdk-cli-install.log"
+    NS_CLI_INSTALL_LOG="${NORTHSLOPE_DIR}/ns-cli-install.log"
     echo "" > ${NS_CLI_INSTALL_LOG}  # Clear/create the log file
 
     echo "npm uninstall -g ns-cli" >> ${NS_CLI_INSTALL_LOG} 2>&1
