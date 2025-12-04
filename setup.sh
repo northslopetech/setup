@@ -684,56 +684,56 @@ fi
 # Northslope Tools
 #------------------------------------------------------------------------------
 
-# Install the osdk-cli using the deployed npm package
+# Install the ns-cli using the deployed npm package
 # unless a specific branch is requested, in which case
 # we build and deploy a local version from that branch
-TOOL="osdk-cli"
-if [[ "${OSDK_BRANCH}" == "" ]]; then
-    # Install osdk-cli from npm
+TOOL="ns-cli"
+if [[ "${NS_CLI_BRANCH}" == "" ]]; then
+    # Install ns-cli from npm
     print_check_msg "${TOOL}"
-    osdk-cli --version > /dev/null 2>&1
-    OSDK_ALREADY_INSTALLED=$?
-    CURR_OSDK_VERSION=""
-    if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
-        CURR_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
+    ns --version > /dev/null 2>&1
+    NS_CLI_ALREADY_INSTALLED=$?
+    CURR_NS_CLI_VERSION=""
+    if [[ ${NS_CLI_ALREADY_INSTALLED} -eq 0 ]]; then
+        CURR_NS_CLI_VERSION=$(ns --version 2>/dev/null | awk '{print $1}' || echo "")
     fi
 
-    install_output=$(npm install -g @northslopetech/osdk-cli 2>&1)
+    install_output=$(npm install -g @northslopetech/ns-cli 2>&1)
     install_status=$?
     if [[ ${install_status} -eq 0 ]]; then
-        NEW_OSDK_VERSION=$(osdk-cli --version 2>/dev/null | awk '{print $1}' || echo "")
-        if [[ ${OSDK_ALREADY_INSTALLED} -eq 0 ]]; then
-            if [[ "${NEW_OSDK_VERSION}" != "${CURR_OSDK_VERSION}" ]]; then
-                print_and_record_upgraded_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
+        NEW_NS_CLI_VERSION=$(ns --version 2>/dev/null | awk '{print $1}' || echo "")
+        if [[ ${NS_CLI_ALREADY_INSTALLED} -eq 0 ]]; then
+            if [[ "${NEW_NS_CLI_VERSION}" != "${CURR_NS_CLI_VERSION}" ]]; then
+                print_and_record_upgraded_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
             else
-                print_and_record_already_installed_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
+                print_and_record_already_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
             fi
         else
-            print_and_record_newly_installed_msg "${TOOL}" ${NEW_OSDK_VERSION} "npm"
+            print_and_record_newly_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
         fi
     else
         print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
     fi
 else
-    print_check_msg "${TOOL}:${OSDK_BRANCH}"
+    print_check_msg "${TOOL}:${NS_CLI_BRANCH}"
     NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
     mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
-    LOCAL_OSDK_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/osdk-cli
+    LOCAL_NS_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/ns-cli
 
     # Create a log file for this installation
-    OSDK_INSTALL_LOG="${NORTHSLOPE_DIR}/osdk-cli-install.log"
-    echo "" > ${OSDK_INSTALL_LOG}  # Clear/create the log file
+    NS_CLI_INSTALL_LOG="${NORTHSLOPE_DIR}/osdk-cli-install.log"
+    echo "" > ${NS_CLI_INSTALL_LOG}  # Clear/create the log file
 
-    echo "npm uninstall -g osdk-cli" >> ${OSDK_INSTALL_LOG} 2>&1
-    npm uninstall -g osdk-cli >> ${OSDK_INSTALL_LOG} 2>&1
+    echo "npm uninstall -g ns-cli" >> ${NS_CLI_INSTALL_LOG} 2>&1
+    npm uninstall -g ns-cli >> ${NS_CLI_INSTALL_LOG} 2>&1
 
-    echo "asdf which osdk-cli" >> ${OSDK_INSTALL_LOG} 2>&1
-    asdf which osdk-cli >> ${OSDK_INSTALL_LOG} 2>&1
+    echo "asdf which ns-cli" >> ${NS_CLI_INSTALL_LOG} 2>&1
+    asdf which ns-cli >> ${NS_CLI_INSTALL_LOG} 2>&1
 
-    current_osdk_path=`asdf which osdk-cli 2>/dev/null`
-    if [[ "${current_osdk_path}" != "" ]]; then
-        echo "rm \"${current_osdk_path}\"" >> ${OSDK_INSTALL_LOG} 2>&1
-        rm "${current_osdk_path}"  >> ${OSDK_INSTALL_LOG} 2>&1
+    current_ns_cli_path=`asdf which ns-cli 2>/dev/null`
+    if [[ "${current_ns_cli_path}" != "" ]]; then
+        echo "rm \"${current_ns_cli_path}\"" >> ${NS_CLI_INSTALL_LOG} 2>&1
+        rm "${current_ns_cli_path}"  >> ${NS_CLI_INSTALL_LOG} 2>&1
     fi
 
     # Flag to track if we should proceed with installation
@@ -741,24 +741,24 @@ else
     failed_step=""
 
     # Clone repository if it doesn't exist
-    if [[ ! -e ${LOCAL_OSDK_CLI_DIR} ]]; then
-        echo "$ gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
-        gh repo clone northslopetech/osdk-cli ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
+    if [[ ! -e ${LOCAL_NS_CLI_DIR} ]]; then
+        echo "$ gh repo clone northslopetech/ns-cli ${LOCAL_NS_CLI_DIR}" >> ${NS_CLI_INSTALL_LOG}
+        gh repo clone northslopetech/ns-cli ${LOCAL_NS_CLI_DIR} >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
             should_install=0
             failed_step="gh repo clone"
         fi
     fi
 
-    echo "$ cd ${LOCAL_OSDK_CLI_DIR}" >> ${OSDK_INSTALL_LOG}
-    cd ${LOCAL_OSDK_CLI_DIR} >> ${OSDK_INSTALL_LOG} 2>&1
+    echo "$ cd ${LOCAL_NS_CLI_DIR}" >> ${NS_CLI_INSTALL_LOG}
+    cd ${LOCAL_NS_CLI_DIR} >> ${NS_CLI_INSTALL_LOG} 2>&1
 
     # Fetch the specified branch
     if [[ ${should_install} -eq 1 ]]; then
-        echo "$ git checkout main" >> ${OSDK_INSTALL_LOG}
-        git checkout main >> ${OSDK_INSTALL_LOG} 2>&1
-        echo "$ git fetch --all" >> ${OSDK_INSTALL_LOG}
-        git fetch --all >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ git checkout main" >> ${NS_CLI_INSTALL_LOG}
+        git checkout main >> ${NS_CLI_INSTALL_LOG} 2>&1
+        echo "$ git fetch --all" >> ${NS_CLI_INSTALL_LOG}
+        git fetch --all >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
             should_install=0
             failed_step="git fetch --all"
@@ -767,20 +767,20 @@ else
 
     # Checkout the specified branch
     if [[ ${should_install} -eq 1 ]]; then
-        echo "$ git checkout origin/${OSDK_BRANCH}" >> ${OSDK_INSTALL_LOG}
-        git checkout origin/${OSDK_BRANCH} >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ git checkout origin/${NS_CLI_BRANCH}" >> ${NS_CLI_INSTALL_LOG}
+        git checkout origin/${NS_CLI_BRANCH} >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
             should_install=0
-            failed_step="git checkout origin/${OSDK_BRANCH}"
+            failed_step="git checkout origin/${NS_CLI_BRANCH}"
         fi
     fi
 
     # Install dependencies
     if [[ ${should_install} -eq 1 ]]; then
-        echo "$ rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules" >> ${OSDK_INSTALL_LOG}
-        rm -rf ${LOCAL_OSDK_CLI_DIR}/node_modules >> ${OSDK_INSTALL_LOG} 2>&1
-        echo "$ pnpm install --frozen-lockfile" >> ${OSDK_INSTALL_LOG}
-        pnpm install --frozen-lockfile >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ rm -rf ${LOCAL_NS_CLI_DIR}/node_modules" >> ${NS_CLI_INSTALL_LOG}
+        rm -rf ${LOCAL_NS_CLI_DIR}/node_modules >> ${NS_CLI_INSTALL_LOG} 2>&1
+        echo "$ pnpm install --frozen-lockfile" >> ${NS_CLI_INSTALL_LOG}
+        pnpm install --frozen-lockfile >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
             should_install=0
             failed_step="pnpm install --frozen-lockfile"
@@ -789,8 +789,8 @@ else
 
     # Build the package
     if [[ ${should_install} -eq 1 ]]; then
-        echo "$ pnpm build" >> ${OSDK_INSTALL_LOG}
-        pnpm build >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ pnpm build" >> ${NS_CLI_INSTALL_LOG}
+        pnpm build >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
             should_install=0
             failed_step="pnpm build"
@@ -799,8 +799,8 @@ else
 
     # Link the package globally
     if [[ ${should_install} -eq 1 ]]; then
-        echo "$ npm link" >> ${OSDK_INSTALL_LOG}
-        npm link >> ${OSDK_INSTALL_LOG} 2>&1
+        echo "$ npm link" >> ${NS_CLI_INSTALL_LOG}
+        npm link >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
             should_install=0
             failed_step="npm link"
@@ -808,10 +808,10 @@ else
     fi
 
     if [[ ${should_install} -eq 1 ]]; then
-        print_and_record_newly_installed_msg "${TOOL}:${OSDK_BRANCH}" "${OSDK_BRANCH}" "manual"
+        print_and_record_newly_installed_msg "${TOOL}:${NS_CLI_BRANCH}" "${NS_CLI_BRANCH}" "manual"
     else
-        log_contents=$(cat ${OSDK_INSTALL_LOG})
-        print_failed_install_msg "${TOOL}:${OSDK_BRANCH}" "${failed_step} failed. Log: ${log_contents}" 1 "manual" "${OSDK_BRANCH}"
+        log_contents=$(cat ${NS_CLI_INSTALL_LOG})
+        print_failed_install_msg "${TOOL}:${NS_CLI_BRANCH}" "${failed_step} failed. Log: ${log_contents}" 1 "manual" "${NS_CLI_BRANCH}"
     fi
 
     cd - > /dev/null 2>&1
