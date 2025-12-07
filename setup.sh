@@ -395,13 +395,13 @@ if [[ ${#PERMISSION_ERRORS[@]} -gt 0 ]]; then
     for error in "${PERMISSION_ERRORS[@]}"; do
         echo "  ❌ $error"
     done
+    print_failed_install_msg "${TOOL}" "Permission errors detected: ${BAD_PERMISSION_PATHS[*]}" 1 "system" ""
     echo ""
-    echo "Please fix these permission issues before running setup again"
-    echo "by running the following:"
+    echo "Please fix these permission issues before running setup again by running the following:"
+    echo ""
     for f in "${BAD_PERMISSION_PATHS[@]}"; do
         echo "sudo chown $USER $f"
     done
-    print_failed_install_msg "${TOOL}" "Permission errors detected: ${BAD_PERMISSION_PATHS[*]}" 1 "system" ""
     exit 1
 else
     print_and_record_already_installed_msg "${TOOL}" "" "system"
