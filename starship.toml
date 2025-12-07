@@ -1,5 +1,8 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# Increase global command timeout to 1000ms (1 second)
+command_timeout = 1000
+
 # Custom format to include ns.config.json values
 format = """
 [┌──](bold green) $username $directory$git_branch$git_status$nodejs$python${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
