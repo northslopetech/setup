@@ -1,4 +1,12 @@
-#!/bin/zsh
+# Detect current shell
+if [ -n "$BASH_VERSION" ]; then
+    CURRENT_SHELL="bash"
+elif [ -n "$ZSH_VERSION" ]; then
+    CURRENT_SHELL="zsh"
+else
+    echo "Warning: Unknown shell. Defaulting to bash compatibility mode."
+    CURRENT_SHELL="bash"
+fi
 
 # git shortcuts
 alias g="git"
@@ -41,13 +49,19 @@ function gpr() {
     # Parse org and repo from both SSH and HTTPS formats
     # SSH format: git@github.com:org/repo.git
     # HTTPS format: https://github.com/org/repo.git
-    if [[ $remote_url =~ ^git@github\.com:(.+)/(.+)\.git$ ]]; then
-        org="${match[1]}"
-        repo="${match[2]}"
-    elif [[ $remote_url =~ ^https://github\.com/(.+)/(.+)\.git$ ]]; then
-        org="${match[1]}"
-        repo="${match[2]}"
-    else
+
+    # Try SSH format first
+    org=$(echo "$remote_url" | sed -n 's|^git@github\.com:\([^/]*\)/.*|\1|p')
+    repo=$(echo "$remote_url" | sed -n 's|^git@github\.com:[^/]*/\(.*\)\.git$|\1|p')
+
+    # If SSH parsing failed, try HTTPS format
+    if [[ -z "$org" || -z "$repo" ]]; then
+        org=$(echo "$remote_url" | sed -n 's|^https://github\.com/\([^/]*\)/.*|\1|p')
+        repo=$(echo "$remote_url" | sed -n 's|^https://github\.com/[^/]*/\(.*\)\.git$|\1|p')
+    fi
+
+    # Check if parsing succeeded
+    if [[ -z "$org" || -z "$repo" ]]; then
         echo "Error: Could not parse GitHub URL from remote origin"
         return 1
     fi
@@ -72,14 +86,14 @@ eval $(/opt/homebrew/bin/brew shellenv)
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 # direnv
-eval "$(direnv hook zsh)"
+eval "$(direnv hook $CURRENT_SHELL)"
 
 # setup script
 alias setup="${NORTHSLOPE_SETUP_SCRIPT_PATH}"
 
 # fzf setup
-eval "$(fzf --zsh)"
+eval "$(fzf --${CURRENT_SHELL})"
 
 # starship setup
 export STARSHIP_CONFIG=${NORTHSLOPE_STARSHIP_CONFIG_PATH}
-eval "$(starship init zsh)"
+eval "$(starship init $CURRENT_SHELL)"

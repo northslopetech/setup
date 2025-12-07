@@ -351,21 +351,27 @@ NS_CLI_BRANCH="$1"
 
 NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
 
-# Ensure .zshrc sources northslope-shell.rc
-TOOL="northslope-shell.rc in .zshrc"
-print_check_msg "${TOOL}"
-touch ~/.zshrc
-cat ~/.zshrc | grep "source ${NORTHSLOPE_SHELL_RC_PATH}" > /dev/null 2>&1
-SHELL_EXTRAS_IN_ZSHRC=$?
-if [[ ${SHELL_EXTRAS_IN_ZSHRC} -ne 0 ]]; then
-    print_missing_msg "${TOOL}"
-    echo "" >> ~/.zshrc
-    echo "# Added by Northslope" >> ~/.zshrc
-    echo "source ${NORTHSLOPE_SHELL_RC_PATH}" >> ~/.zshrc
-    print_and_record_newly_installed_msg "${TOOL}"
-else
-    print_and_record_already_installed_msg "${TOOL}"
-fi
+# Install in both bashrc and zshrc
+SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
+
+# Ensure shell RC files source northslope-shell.rc
+for shell_rc in "${SHELL_RC_FILES[@]}"; do
+    shell_name=$(basename "$shell_rc")
+    TOOL="northslope-shell.rc in ${shell_name}"
+    print_check_msg "${TOOL}"
+    touch "$shell_rc"
+    grep "source ${NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > /dev/null 2>&1
+    SHELL_EXTRAS_IN_RC=$?
+    if [[ ${SHELL_EXTRAS_IN_RC} -ne 0 ]]; then
+        print_missing_msg "${TOOL}"
+        echo "" >> "$shell_rc"
+        echo "# Added by Northslope" >> "$shell_rc"
+        echo "source ${NORTHSLOPE_SHELL_RC_PATH}" >> "$shell_rc"
+        print_and_record_newly_installed_msg "${TOOL}"
+    else
+        print_and_record_already_installed_msg "${TOOL}"
+    fi
+done
 
 #------------------------------------------------------------------------------
 # Shell Commands Installation
