@@ -353,13 +353,13 @@ BAD_PERMISSION_PATHS=()
 # Check NORTHSLOPE_DIR separately (directory)
 if [[ ! -d "$NORTHSLOPE_DIR" ]]; then
     PERMISSION_ERRORS+=("Northslope directory uncreatable at: $NORTHSLOPE_DIR")
-    BAD_PERMISSION_PATHS+=($(dirname $NORTHSLOPE_DIR))
+    BAD_PERMISSION_PATHS+=("$(dirname "$NORTHSLOPE_DIR")")
 else
     # Directory exists, try to chown to verify permissions
     chown "$USER" "$NORTHSLOPE_DIR" 2>/dev/null
     if [[ $? -ne 0 ]]; then
         PERMISSION_ERRORS+=("No write permission for directory: $NORTHSLOPE_DIR")
-        BAD_PERMISSION_PATHS+=($NORTHSLOPE_DIR)
+        BAD_PERMISSION_PATHS+=("$NORTHSLOPE_DIR")
     fi
 fi
 
@@ -376,14 +376,14 @@ for file in "${FILES_TO_CHECK[@]}"; do
         chown "$USER" "$file" 2>/dev/null
         if [[ $? -ne 0 ]] && [[ ! -w "$file" ]]; then
             PERMISSION_ERRORS+=("No write permission for file: $file")
-            BAD_PERMISSION_PATHS+=($file)
+            BAD_PERMISSION_PATHS+=("$file")
         fi
     else
         # File doesn't exist, try to create it
         touch "$file" 2>/dev/null
         if [[ $? -ne 0 ]]; then
             PERMISSION_ERRORS+=("Cannot create file: $file")
-            BAD_PERMISSION_PATHS+=($(dirname $file))
+            BAD_PERMISSION_PATHS+=("$(dirname "$file")")
         fi
     fi
 done
