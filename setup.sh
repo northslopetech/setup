@@ -48,7 +48,7 @@ function print_failed_install_msg {
     local installer=${4:-"manual"}
     local version=${5:-""}
 
-    echo "'${tool}' Not Installed 🚫"
+    echo "'${tool}' Not Ready 🚫"
     capture_failure "${tool}" "${error_msg}" "${exit_code}" "${installer}" "${version}"
 }
 
@@ -65,7 +65,7 @@ function print_and_record_already_installed_msg {
     local tool=$1
     local version=${2:-""}
     local installer=${3:-"manual"}
-    echo "'${tool}' Installed ✅"
+    echo "'${tool}' Ready ✅"
 
     record_tool_result "${tool}" "already_installed" "" "0" "${installer}" "${version}"
 }
@@ -74,7 +74,7 @@ function print_and_record_newly_installed_msg {
     local tool=$1
     local version=${2:-""}
     local installer=${3:-"manual"}
-    echo "'${tool}' Newly Installed ✨"
+    echo "'${tool}' New ✨"
 
     record_tool_result "${tool}" "installed" "" "0" "${installer}" "${version}"
 }
@@ -82,7 +82,7 @@ function print_and_record_newly_installed_msg {
 
 function print_missing_msg {
     local tool=$1
-    echo "Missing '${tool}'... Installing... "
+    echo "Missing '${tool}'... "
 }
 
 function capture_failure {
