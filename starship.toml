@@ -19,14 +19,14 @@ style = 'bold green'
 
 # Custom module to display implName
 [custom.impl_name]
-command = 'jq -r ".implName // empty" ns.config.json 2>/dev/null'
+command = """grep -o '"implName"[[:space:]]*:[[:space:]]*"[^"]*"' ns.config.json 2>/dev/null | sed -E 's/.*"([^"]*)"/\\1/'"""
 when = '[ -f ns.config.json ]'
 format = '[$output ]($style)'
 style = 'bold cyan'
 
 # Custom module to display projectName
 [custom.project_name]
-command = 'jq -r ".projectName // empty" ns.config.json 2>/dev/null'
+command = """grep -o '"projectName"[[:space:]]*:[[:space:]]*"[^"]*"' ns.config.json 2>/dev/null | sed -E 's/.*"([^"]*)"/\\1/'"""
 when = '[ -f ns.config.json ]'
 format = "[$output ]($style)"
 style = 'bold yellow'
