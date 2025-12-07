@@ -357,7 +357,7 @@ if [[ ! -d "$NORTHSLOPE_DIR" ]]; then
 else
     # Directory exists, try to chown to verify permissions
     chown "$USER" "$NORTHSLOPE_DIR" 2>/dev/null
-    if [[ $? -ne 0 ]] && [[ ! -w "$NORTHSLOPE_DIR" ]]; then
+    if [[ $? -ne 0 ]] || [[ ! -w "$NORTHSLOPE_DIR" ]]; then
         PERMISSION_ERRORS+=("No write permission for directory: $NORTHSLOPE_DIR")
         BAD_PERMISSION_PATHS+=("$NORTHSLOPE_DIR")
     fi
@@ -374,7 +374,7 @@ for file in "${FILES_TO_CHECK[@]}"; do
     if [[ -e "$file" ]]; then
         # File exists, try to chown to verify permissions
         chown "$USER" "$file" 2>/dev/null
-        if [[ $? -ne 0 ]] && [[ ! -w "$file" ]]; then
+        if [[ $? -ne 0 ]] || [[ ! -w "$file" ]]; then
             PERMISSION_ERRORS+=("No write permission for file: $file")
             BAD_PERMISSION_PATHS+=("$file")
         fi
