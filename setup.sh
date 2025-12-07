@@ -339,6 +339,83 @@ emit_setup_started_event &
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
 #------------------------------------------------------------------------------
+# Permissions Check
+#------------------------------------------------------------------------------
+
+# Check write permissions for files we'll modify
+TOOL="file permissions"
+print_check_msg "${TOOL}"
+
+PERMISSION_ERRORS=()
+
+# Check NORTHSLOPE_DIR separately (directory)
+if [[ ! -d "$NORTHSLOPE_DIR" ]]; then
+    # Directory doesn't exist, already created above
+    if [[ ! -w "$NORTHSLOPE_DIR" ]]; then
+        PERMISSION_ERRORS+=("Cannot write to directory: $NORTHSLOPE_DIR")
+    fi
+else
+    # Directory exists, try to chown to verify permissions
+    chown "$USER" "$NORTHSLOPE_DIR" 2>/dev/null
+    if [[ $? -ne 0 ]] && [[ ! -w "$NORTHSLOPE_DIR" ]]; then
+        PERMISSION_ERRORS+=("No write permission for directory: $NORTHSLOPE_DIR")
+    fi
+fi
+
+# Check RC files and git config
+FILES_TO_CHECK=(
+    "$HOME/.bashrc"
+    "$HOME/.zshrc"
+    "$HOME/.gitconfig"
+)
+
+for file in "${FILES_TO_CHECK[@]}"; do
+    if [[ -e "$file" ]]; then
+        # File exists, try to chown to verify permissions
+        chown "$USER" "$file" 2>/dev/null
+        if [[ $? -ne 0 ]] && [[ ! -w "$file" ]]; then
+            PERMISSION_ERRORS+=("No write permission for file: $file")
+        fi
+    else
+        # File doesn't exist, try to create it
+        touch "$file" 2>/dev/null
+        if [[ $? -ne 0 ]]; then
+            PERMISSION_ERRORS+=("Cannot create file: $file")
+        fi
+    fi
+done
+
+# Check git config write permissions
+git config --global user.name > /dev/null 2>&1
+GIT_CONFIG_WRITABLE=$?
+if [[ $GIT_CONFIG_WRITABLE -ne 0 ]]; then
+    # Try to write a test value
+    git config --global setup.permissiontest "test" 2>/dev/null
+    if [[ $? -ne 0 ]]; then
+        PERMISSION_ERRORS+=("Cannot write to git global config")
+    else
+        # Clean up test value
+        git config --global --unset setup.permissiontest 2>/dev/null
+    fi
+fi
+
+if [[ ${#PERMISSION_ERRORS[@]} -gt 0 ]]; then
+    echo "Permission Errors Detected 🚫"
+    echo ""
+    echo "The following permission issues were found:"
+    for error in "${PERMISSION_ERRORS[@]}"; do
+        echo "  ❌ $error"
+    done
+    echo ""
+    echo "Please fix these permission issues before running setup again."
+    echo "You may need to run: sudo chown $USER <file>"
+    print_failed_install_msg "${TOOL}" "Permission errors detected: ${PERMISSION_ERRORS[*]}" 1 "system" ""
+    exit 1
+else
+    print_and_record_already_installed_msg "${TOOL}" "" "system"
+fi
+
+#------------------------------------------------------------------------------
 # Parse NS CLI Branch options
 #------------------------------------------------------------------------------
 
