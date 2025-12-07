@@ -27,6 +27,8 @@ function hlog {
     git log --date-order --all --graph --format="%C(green)%h %Creset%C(yellow)%an%Creset %C(blue bold)%ar%Creset %C(red bold)%d%Creset %s" $@
 }
 
+alias hl="hlog"
+
 # github pull request opener
 function gpr() {
     # Ex. https://github.com/ORG/REPO/pull/new/BRANCH
