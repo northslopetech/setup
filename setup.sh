@@ -339,6 +339,75 @@ emit_setup_started_event &
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
 #------------------------------------------------------------------------------
+# Permissions Check
+#------------------------------------------------------------------------------
+
+# Check write permissions for files we'll modify
+TOOL="file permissions"
+print_check_msg "${TOOL}"
+
+# Keep a. array of permission errors
+PERMISSION_ERRORS=()
+BAD_PERMISSION_PATHS=()
+
+# Check NORTHSLOPE_DIR separately (directory)
+if [[ ! -d "$NORTHSLOPE_DIR" ]]; then
+    PERMISSION_ERRORS+=("Northslope directory uncreatable at: $NORTHSLOPE_DIR")
+    BAD_PERMISSION_PATHS+=("$(dirname "$NORTHSLOPE_DIR")")
+else
+    # Directory exists, try to chown to verify permissions
+    chown "$USER" "$NORTHSLOPE_DIR" 2>/dev/null
+    if [[ $? -ne 0 ]] || [[ ! -w "$NORTHSLOPE_DIR" ]]; then
+        PERMISSION_ERRORS+=("No write permission for directory: $NORTHSLOPE_DIR")
+        BAD_PERMISSION_PATHS+=("$NORTHSLOPE_DIR")
+    fi
+fi
+
+# Check RC files and git config
+FILES_TO_CHECK=(
+    "$HOME/.bashrc"
+    "$HOME/.zshrc"
+    "$HOME/.gitconfig"
+)
+
+for file in "${FILES_TO_CHECK[@]}"; do
+    if [[ -e "$file" ]]; then
+        # File exists, try to chown to verify permissions
+        chown "$USER" "$file" 2>/dev/null
+        if [[ $? -ne 0 ]] || [[ ! -w "$file" ]]; then
+            PERMISSION_ERRORS+=("No write permission for file: $file")
+            BAD_PERMISSION_PATHS+=("$file")
+        fi
+    else
+        # File doesn't exist, try to create it
+        touch "$file" 2>/dev/null
+        if [[ $? -ne 0 ]]; then
+            PERMISSION_ERRORS+=("Cannot create file: $file")
+            BAD_PERMISSION_PATHS+=("$(dirname "$file")")
+        fi
+    fi
+done
+
+if [[ ${#PERMISSION_ERRORS[@]} -gt 0 ]]; then
+    echo "Permission Errors Detected 🚫"
+    echo ""
+    echo "The following permission issues were found:"
+    for error in "${PERMISSION_ERRORS[@]}"; do
+        echo "  ❌ $error"
+    done
+    print_failed_install_msg "${TOOL}" "Permission errors detected: ${BAD_PERMISSION_PATHS[*]}" 1 "system" ""
+    echo ""
+    echo "Please fix these permission issues before running setup again by running the following:"
+    echo ""
+    for f in "${BAD_PERMISSION_PATHS[@]}"; do
+        echo "sudo chown $USER $f"
+    done
+    exit 1
+else
+    print_and_record_already_installed_msg "${TOOL}" "" "system"
+fi
+
+#------------------------------------------------------------------------------
 # Parse NS CLI Branch options
 #------------------------------------------------------------------------------
 
