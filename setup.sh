@@ -1,5 +1,31 @@
 #!/bin/zsh
 
+#                                         XX                                      
+#                                       XX  XX                                    
+#                                     XX      X                                   
+#                                    X         XX                                 
+#                                  XX            XX                               
+#                                XX                X                              
+#                               X                   XX                            
+#                             XX                      X                           
+#                           XX                    XX   XX                         
+#                          X                    XX  XX   XX                       
+#                        XX                   XX      X    X                      
+#                      XX                    X         XX   XX                    
+#                     X                    XX            XX   X                   
+#                   XX                   XX                X   XX                 
+#                 XX                    X                   XX   X                
+#                X                    XX                      X   XX              
+#              XX                   XX   XX                    XX   XX            
+#            XX                   XX   XX  X                     X    X           
+#           X                    X    X     XX                    XX   XX         
+#         XX                   XX   XX        X                     X    X        
+#       XX                   XX   XX           XX                    XX   XX      
+#      X                   XXXXXXX               XX                    XX   XX    
+#    XX                                            X                     X    X   
+#  XX                                               XX                    XX   XX 
+# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                     XXXXXX
+
 #==============================================================================
 # CONFIGURATION & CONSTANTS
 #==============================================================================
