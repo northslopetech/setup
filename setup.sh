@@ -606,6 +606,21 @@ else
     print_and_record_already_installed_msg "${TOOL}" ${STARSHIP_VERSION} "brew"
 fi
 
+# Install tree
+TOOL=tree
+print_check_msg ${TOOL}
+tree --version > /dev/null 2>&1
+TREE_INSTALLED=$?
+if [[ ${TREE_INSTALLED} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install tree
+    TREE_VERSION=$(tree --version 2>/dev/null | head -1 | awk '{print $2}' || echo "")
+    print_and_record_newly_installed_msg "${TOOL}" ${TREE_VERSION} "brew"
+else
+    TREE_VERSION=$(tree --version 2>/dev/null | head -1 | awk '{print $2}' || echo "")
+    print_and_record_already_installed_msg "${TOOL}" ${TREE_VERSION} "brew"
+fi
+
 #------------------------------------------------------------------------------
 # Git Configuration
 #------------------------------------------------------------------------------
