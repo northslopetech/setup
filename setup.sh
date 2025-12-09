@@ -309,12 +309,7 @@ function brew_install_tool {
 
     ${tool} --version > /dev/null 2>&1
     local already_installed=$?
-
-    # Get version command - special case for tree
     local version_cmd="${tool} --version"
-    if [[ "${tool}" == "tree" ]]; then
-        version_cmd="${tool} --version | head -1"
-    fi
 
     if [[ ${already_installed} -ne 0 ]]; then
         print_missing_msg ${TOOL}
