@@ -298,6 +298,35 @@ function check_home_version_set {
     fi
 }
 
+function brew_install_tool {
+    local tool=$1
+    local version_index=$2
+    local cask_flag="${3:-""}"
+    local brew_package="${4:-$tool}"
+
+    TOOL=${tool}
+    print_check_msg ${TOOL}
+
+    ${tool} --version > /dev/null 2>&1
+    local already_installed=$?
+
+    # Get version command - special case for tree
+    local version_cmd="${tool} --version"
+    if [[ "${tool}" == "tree" ]]; then
+        version_cmd="${tool} --version | head -1"
+    fi
+
+    if [[ ${already_installed} -ne 0 ]]; then
+        print_missing_msg ${TOOL}
+        brew install ${cask_flag} ${brew_package}
+        local version=$(eval ${version_cmd} 2>/dev/null | awk "{print \$${version_index}}" || echo "")
+        print_and_record_newly_installed_msg "${TOOL}" "${version}" "brew"
+    else
+        local version=$(eval ${version_cmd} 2>/dev/null | awk "{print \$${version_index}}" || echo "")
+        print_and_record_already_installed_msg "${TOOL}" "${version}" "brew"
+    fi
+}
+
 function asdf_install_and_set {
     local tool=$1
     local version=$2
@@ -545,66 +574,20 @@ else
     fi
 fi
 
-# Install asdf
-TOOL=asdf
-print_check_msg ${TOOL}
-asdf --help > /dev/null 2>&1
-ASDF_ALREADY_INSTALLED=$?
-if [[ ${ASDF_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install asdf
-    ASDF_VERSION=$(asdf --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_newly_installed_msg "${TOOL}" ${ASDF_VERSION} "brew"
-else
-    ASDF_VERSION=$(asdf --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_already_installed_msg "${TOOL}" ${ASDF_VERSION} "brew"
-fi
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
-# Install autojump
-TOOL=autojump
-print_check_msg ${TOOL}
-autojump --version > /dev/null 2>&1
-AUTOJUMP_ALREADY_INSTALLED=$?
-if [[ ${AUTOJUMP_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install autojump
-    AUTOJUMP_VERSION=$(autojump --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_newly_installed_msg ${TOOL} ${AUTOJUMP_VERSION} "brew"
-else
-    AUTOJUMP_VERSION=$(autojump --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_already_installed_msg ${TOOL} ${AUTOJUMP_VERSION} "brew"
-fi
+brew_tools=(
+    "asdf__2"
+    "autojump__2"
+    "fzf__1"
+    "starship__2"
+    "tree__2"
+)
 
-# Install fzf
-TOOL=fzf
-print_check_msg ${TOOL}
-fzf --version > /dev/null 2>&1
-FZF_INSTALLED=$?
-if [[ ${FZF_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install fzf
-    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_newly_installed_msg "${TOOL}" ${FZF_VERSION} "brew"
-else
-    FZF_VERSION=$(fzf --version 2>/dev/null | awk '{print $1}' || echo "")
-    print_and_record_already_installed_msg "${TOOL}" ${FZF_VERSION} "brew"
-fi
-
-# Install starship
-TOOL=starship
-print_check_msg ${TOOL}
-starship --version > /dev/null 2>&1
-STARSHIP_INSTALLED=$?
-if [[ ${STARSHIP_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install starship
-    STARSHIP_VERSION=$(starship --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_newly_installed_msg "${TOOL}" ${STARSHIP_VERSION} "brew"
-else
-    STARSHIP_VERSION=$(starship --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_already_installed_msg "${TOOL}" ${STARSHIP_VERSION} "brew"
-fi
+for brew_tool in ${brew_tools[@]}; do
+    tool=${brew_tool%__*}
+    version_index=${brew_tool#*__}
+    brew_install_tool "${tool}" ${version_index}
+done
 
 # Install tree
 TOOL=tree
@@ -689,19 +672,7 @@ else
 fi
 
 # Install claude code
-TOOL=claude
-print_check_msg ${TOOL}
-claude --version > /dev/null 2>&1
-CLAUDE_ALREADY_INSTALLED=$?
-if [[ ${CLAUDE_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_missing_msg ${TOOL}
-    brew install --cask claude-code
-    CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_newly_installed_msg "${TOOL}" ${CLAUDE_VERSION} "brew"
-else
-    CLAUDE_VERSION=$(claude --version 2>/dev/null | awk '{print $2}' || echo "")
-    print_and_record_already_installed_msg "${TOOL}" ${CLAUDE_VERSION} "brew"
-fi
+brew_install_tool "claude" 2 "--cask" "claude-code"
 
 #------------------------------------------------------------------------------
 # Programming Languages & Tools (via asdf)
