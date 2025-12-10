@@ -584,6 +584,8 @@ for brew_tool in ${brew_tools[@]}; do
     brew_install_tool "${tool}" ${version_index}
 done
 
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
 #------------------------------------------------------------------------------
 # Git Configuration
 #------------------------------------------------------------------------------
