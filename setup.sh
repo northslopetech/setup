@@ -298,27 +298,32 @@ function check_home_version_set {
     fi
 }
 
+function get_tool_version {
+    local tool=$1
+    local version_index=$2
+    local version_cmd="${tool} --version"
+    eval ${version_cmd} 2>&1 | head -1 | awk "{print \$${version_index}}" || echo ""
+}
+
 function brew_install_tool {
     local tool=$1
     local version_index=$2
     local cask_flag="${3:-""}"
     local brew_package="${4:-$tool}"
 
-    TOOL=${tool}
-    print_check_msg ${TOOL}
+    print_check_msg ${tool}
 
     ${tool} --version > /dev/null 2>&1
     local already_installed=$?
-    local version_cmd="${tool} --version"
 
     if [[ ${already_installed} -ne 0 ]]; then
-        print_missing_msg ${TOOL}
+        print_missing_msg ${tool}
         brew install ${cask_flag} ${brew_package}
-        local version=$(eval ${version_cmd} 2>/dev/null | awk "{print \$${version_index}}" || echo "")
-        print_and_record_newly_installed_msg "${TOOL}" "${version}" "brew"
+        local version=$(get_tool_version ${tool} ${version_index})
+        print_and_record_newly_installed_msg "${tool}" "${version}" "brew"
     else
-        local version=$(eval ${version_cmd} 2>/dev/null | awk "{print \$${version_index}}" || echo "")
-        print_and_record_already_installed_msg "${TOOL}" "${version}" "brew"
+        local version=$(get_tool_version ${tool} ${version_index})
+        print_and_record_already_installed_msg "${tool}" "${version}" "brew"
     fi
 }
 
