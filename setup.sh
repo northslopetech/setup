@@ -576,7 +576,7 @@ fi
 
 
 brew_tools=(
-    "asdf__2"
+    "asdf__3"
     "autojump__2"
     "fzf__1"
     "starship__2"
