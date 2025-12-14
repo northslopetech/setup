@@ -372,7 +372,7 @@ mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 TOOL="file permissions"
 print_check_msg "${TOOL}"
 
-# Keep a. array of permission errors
+# Keep an array of permission errors
 PERMISSION_ERRORS=()
 BAD_PERMISSION_PATHS=()
 
@@ -554,7 +554,7 @@ OLD_NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
 
 # Clean up old shell RC references from shell config files
 if [[ -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}" ]]; then
-    for shell_rc in ${TARGET_SHELL_RC_FILES}; do
+    for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
         if [[ -f "$shell_rc" ]]; then
             # Check if old source line exists
             if grep -q "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc"; then
@@ -783,7 +783,7 @@ asdf_tools=(
     java__openjdk-17.0.2
 )
 
-for asdf_tool in ${asdf_tools[@]}; do
+for asdf_tool in "${asdf_tools[@]}"; do
     tool=${asdf_tool%__*}
     version=${asdf_tool#*__}
     asdf_install_and_set "${tool}" ${version}
