@@ -495,12 +495,16 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
 done
 
 function download_latest_shell {
+    pids=()
     for northslope_downloadable_path in "${NORTHSLOPE_DOWNLOADABLE_PATHS[@]}"; do
         filename=$(basename ${northslope_downloadable_path})
         url=https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/${filename}
         curl -fsSL ${url} > ${northslope_downloadable_path} &
+        pids+=($!)
     done
-    wait
+    for pid in "${pids[@]}"; do
+        wait ${pid} || return 1
+    done
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
 }
@@ -519,6 +523,10 @@ done
 if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ${any_missing_files} -eq 0 ]]; then
     print_missing_msg ${TOOL}
     download_latest_shell
+    if [[ $? -ne 0 ]]; then
+        print_failed_install_msg "${TOOL}" "Failed to download shell files" 1 "manual" ""
+        exit 1
+    fi
     print_and_record_newly_installed_msg "${TOOL}" `get_latest_version`
 else
     IS_UPGRADING=1
@@ -528,6 +536,10 @@ else
     fi
     if [[ ${IS_UPGRADING} -eq 0 ]]; then
         download_latest_shell
+        if [[ $? -ne 0 ]]; then
+            print_failed_install_msg "${TOOL}" "Failed to download shell files during upgrade" 1 "manual" ""
+            exit 1
+        fi
         print_and_record_upgraded_msg "${TOOL}" `get_latest_version`
     else
         print_and_record_already_installed_msg "${TOOL}" `get_latest_version`
