@@ -410,6 +410,12 @@ function asdf_install_and_set {
     plugin_output=$(asdf plugin add ${tool} 2>&1)
     plugin_status=$?
 
+    # Check if plugin add was successful
+    if [[ ${plugin_status} -ne 0 ]]; then
+        print_failed_install_msg "${tool} ${version}" "asdf install failed: ${plugin_output}" ${plugin_status} "asdf" "${version}"
+        return 1
+    fi
+
     # No-op if command is installed
     install_output=$(asdf install ${tool} ${version} 2>&1)
     install_status=$?
@@ -581,17 +587,11 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
         shell_name=$(basename "$shell_rc")
         shell_rc_name=$(basename ${northslope_shell_rc_path})
-        tool="${shell_rc_name} in ${shell_name}"
-        print_check_msg "${tool}"
         touch "$shell_rc"
         grep "source ${northslope_shell_rc_path}" "$shell_rc" > /dev/null 2>&1
         northslope_rc_in_shell=$?
         if [[ ${northslope_rc_in_shell} -ne 0 ]]; then
-            print_missing_msg "${tool}"
             echo "source ${northslope_shell_rc_path}" >> "$shell_rc"
-            print_and_record_newly_installed_msg "${tool}"
-        else
-            print_and_record_already_installed_msg "${tool}"
         fi
     done
 done
@@ -629,7 +629,7 @@ if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ${any_missing_files} -eq 0
         print_failed_install_msg "${TOOL}" "Failed to download shell files" 1 "manual" ""
         exit 1
     fi
-    print_and_record_newly_installed_msg "${TOOL}" `get_latest_version`
+    print_and_record_newly_installed_msg "${TOOL}" "`get_latest_version`"
 else
     IS_UPGRADING=1
     current_version=`cat ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}`
