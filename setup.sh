@@ -401,7 +401,7 @@ mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 TOOL="file permissions"
 print_check_msg "${TOOL}"
 
-# Keep a. array of permission errors
+# Keep an array of permission errors
 PERMISSION_ERRORS=()
 BAD_PERMISSION_PATHS=()
 
@@ -470,45 +470,70 @@ NS_CLI_BRANCH="$1"
 
 
 #------------------------------------------------------------------------------
-# Shell Extras Setup
+# Shell Setup
 #------------------------------------------------------------------------------
 
-NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
-
-# Install in both bashrc and zshrc
-SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
-
-# Ensure shell RC files source northslope-shell.rc
-for shell_rc in "${SHELL_RC_FILES[@]}"; do
-    shell_name=$(basename "$shell_rc")
-    TOOL="northslope-shell.rc in ${shell_name}"
-    print_check_msg "${TOOL}"
-    touch "$shell_rc"
-    grep "source ${NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > /dev/null 2>&1
-    SHELL_EXTRAS_IN_RC=$?
-    if [[ ${SHELL_EXTRAS_IN_RC} -ne 0 ]]; then
-        print_missing_msg "${TOOL}"
-        echo "" >> "$shell_rc"
-        echo "# Added by Northslope" >> "$shell_rc"
-        echo "source ${NORTHSLOPE_SHELL_RC_PATH}" >> "$shell_rc"
-        print_and_record_newly_installed_msg "${TOOL}"
-    else
-        print_and_record_already_installed_msg "${TOOL}"
-    fi
-done
-
-#------------------------------------------------------------------------------
-# Shell Commands Installation
-#------------------------------------------------------------------------------
+NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
-NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
+NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-base-shell.rc
+NORTHSLOPE_STARSHIP_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-starship-shell.rc
+
 NORTHSLOPE_STARSHIP_CONFIG_PATH=${NORTHSLOPE_DIR}/starship.toml
 
+NORTHSLOPE_DOWNLOADABLE_PATHS=(
+    ${NORTHSLOPE_SETUP_SCRIPT_PATH}
+    ${NORTHSLOPE_SHELL_RC_PATH}
+    ${NORTHSLOPE_STARSHIP_SHELL_RC_PATH}
+
+    ${NORTHSLOPE_STARSHIP_CONFIG_PATH}
+)
+NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_STARSHIP_SHELL_RC_PATH})
+
+# Install in both bashrc and zshrc
+TARGET_SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
+
+message="# Added by Northslope"
+
+any_missing=1
+for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
+    grep "${message}" "$shell_rc" > /dev/null 2>&1
+    northslope_note_exists=$?
+    if [[ ! ${northslope_note_exists} -eq 0 ]]; then
+        echo "" >> "$shell_rc"
+        echo "${message}" >> "$shell_rc"
+        echo "" >> "$shell_rc"
+    fi
+
+    for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
+        shell_name=$(basename "$shell_rc")
+        shell_rc_name=$(basename ${northslope_shell_rc_path})
+        tool="${shell_rc_name} in ${shell_name}"
+        print_check_msg "${tool}"
+        touch "$shell_rc"
+        grep "source ${northslope_shell_rc_path}" "$shell_rc" > /dev/null 2>&1
+        northslope_rc_in_shell=$?
+        if [[ ${northslope_rc_in_shell} -ne 0 ]]; then
+            print_missing_msg "${tool}"
+            echo "source ${northslope_shell_rc_path}" >> "$shell_rc"
+            print_and_record_newly_installed_msg "${tool}"
+        else
+            print_and_record_already_installed_msg "${tool}"
+        fi
+    done
+done
+
 function download_latest_shell {
-    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-shell.rc > ${NORTHSLOPE_SHELL_RC_PATH}
-    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh > ${NORTHSLOPE_SETUP_SCRIPT_PATH}
-    curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/starship.toml > ${NORTHSLOPE_STARSHIP_CONFIG_PATH}
+    pids=()
+    for northslope_downloadable_path in "${NORTHSLOPE_DOWNLOADABLE_PATHS[@]}"; do
+        filename=$(basename ${northslope_downloadable_path})
+        url=https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/${filename}
+        curl -fsSL ${url} > ${northslope_downloadable_path} &
+        pids+=($!)
+    done
+    for pid in "${pids[@]}"; do
+        wait ${pid} || return 1
+    done
     chmod +x ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     get_latest_version > ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH}
 }
@@ -516,9 +541,21 @@ function download_latest_shell {
 # Install or upgrade setup script
 TOOL="shell commands"
 print_check_msg ${TOOL}
-if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_PATH} || ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ! -e ${NORTHSLOPE_SHELL_RC_PATH} || ! -e ${NORTHSLOPE_STARSHIP_CONFIG_PATH} ]]; then
+
+any_missing_files=1
+for northslope_downloadable_path in "${NORTHSLOPE_DOWNLOADABLE_PATHS[@]}"; do
+    if [[ ! -e ${northslope_downloadable_path} ]]; then
+        any_missing_files=0
+    fi
+done
+
+if [[ ! -e ${NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH} || ${any_missing_files} -eq 0 ]]; then
     print_missing_msg ${TOOL}
     download_latest_shell
+    if [[ $? -ne 0 ]]; then
+        print_failed_install_msg "${TOOL}" "Failed to download shell files" 1 "manual" ""
+        exit 1
+    fi
     print_and_record_newly_installed_msg "${TOOL}" `get_latest_version`
 else
     IS_UPGRADING=1
@@ -528,10 +565,37 @@ else
     fi
     if [[ ${IS_UPGRADING} -eq 0 ]]; then
         download_latest_shell
+        if [[ $? -ne 0 ]]; then
+            print_failed_install_msg "${TOOL}" "Failed to download shell files during upgrade" 1 "manual" ""
+            exit 1
+        fi
         print_and_record_upgraded_msg "${TOOL}" `get_latest_version`
     else
         print_and_record_already_installed_msg "${TOOL}" `get_latest_version`
     fi
+fi
+
+#------------------------------------------------------------------------------
+# Migration: Remove Old Shell RC Setup
+#------------------------------------------------------------------------------
+
+OLD_NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
+
+# Clean up old shell RC references from shell config files
+if [[ -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}" ]]; then
+    for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
+        if [[ -f "$shell_rc" ]]; then
+            # Check if old source line exists
+            if grep -q "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc"; then
+                # Remove the old source line
+                grep -v "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > "${shell_rc}.tmp"
+                mv "${shell_rc}.tmp" "$shell_rc"
+            fi
+        fi
+    done
+
+    # Remove old file from disk
+    rm -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}"
 fi
 
 #------------------------------------------------------------------------------
@@ -677,7 +741,7 @@ asdf_tools=(
     java__openjdk-17.0.2
 )
 
-for asdf_tool in ${asdf_tools[@]}; do
+for asdf_tool in "${asdf_tools[@]}"; do
     tool=${asdf_tool%__*}
     version=${asdf_tool#*__}
     asdf_install_and_set "${tool}" ${version}

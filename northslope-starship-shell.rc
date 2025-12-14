@@ -1,0 +1,16 @@
+# Detect current shell
+if [ -n "$BASH_VERSION" ]; then
+    CURRENT_SHELL="bash"
+elif [ -n "$ZSH_VERSION" ]; then
+    CURRENT_SHELL="zsh"
+else
+    echo "Warning: Unknown shell. Defaulting to bash compatibility mode."
+    CURRENT_SHELL="bash"
+fi
+
+NORTHSLOPE_DIR=${HOME}/.northslope
+NORTHSLOPE_STARSHIP_CONFIG_PATH=${NORTHSLOPE_DIR}/starship.toml
+
+# starship setup
+export STARSHIP_CONFIG=${NORTHSLOPE_STARSHIP_CONFIG_PATH}
+eval "$(starship init $CURRENT_SHELL)"
