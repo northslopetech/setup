@@ -470,7 +470,7 @@ any_missing=1
 for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     grep "${message}" "$shell_rc" > /dev/null 2>&1
     northslope_note_exists=$?
-    if [[ ! ${northslope_note_exists} -eq 0 ]]; do
+    if [[ ! ${northslope_note_exists} -eq 0 ]]; then
         echo "" >> "$shell_rc"
         echo "${message}" >> "$shell_rc"
         echo "" >> "$shell_rc"
