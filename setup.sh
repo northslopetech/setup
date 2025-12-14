@@ -341,6 +341,12 @@ function asdf_install_and_set {
     plugin_output=$(asdf plugin add ${tool} 2>&1)
     plugin_status=$?
 
+    # Check if plugin add was successful
+    if [[ ${plugin_status} -ne 0 ]]; then
+        print_failed_install_msg "${tool} ${version}" "asdf install failed: ${plugin_output}" ${plugin_status} "asdf" "${version}"
+        return 1
+    fi
+
     # No-op if command is installed
     install_output=$(asdf install ${tool} ${version} 2>&1)
     install_status=$?
