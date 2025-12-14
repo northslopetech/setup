@@ -43,7 +43,7 @@ format = '[$path]($style)[$read_only]($read_only_style) '
 style = 'bold blue'
 
 [git_branch]
-format = '[$symbol$branch(:$remote_branch)]($style) '
+format = "[\n├── ](bold green)[$symbol$branch(:$remote_branch)]($style) "
 symbol = ''
 truncation_symbol = '...'
 ignore_branches = []
