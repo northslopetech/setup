@@ -547,6 +547,29 @@ else
 fi
 
 #------------------------------------------------------------------------------
+# Migration: Remove Old Shell RC Setup
+#------------------------------------------------------------------------------
+
+OLD_NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
+
+# Clean up old shell RC references from shell config files
+if [[ -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}" ]]; then
+    for shell_rc in ${TARGET_SHELL_RC_FILES}; do
+        if [[ -f "$shell_rc" ]]; then
+            # Check if old source line exists
+            if grep -q "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc"; then
+                # Remove the old source line
+                grep -v "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > "${shell_rc}.tmp"
+                mv "${shell_rc}.tmp" "$shell_rc"
+            fi
+        fi
+    done
+
+    # Remove old file from disk
+    rm -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}"
+fi
+
+#------------------------------------------------------------------------------
 # Package Managers
 #------------------------------------------------------------------------------
 
