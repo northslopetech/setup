@@ -170,8 +170,9 @@ function emit_failure_event {
     local LATEST_SCRIPT_VERSION=`get_latest_version`
 
     # Escape error message for JSON (backslashes first, then quotes, then newlines)
-    local escaped_error_msg=$(printf '%s' "${error_msg}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
-    local escaped_tool=$(echo "${tool}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+    # Remove control characters except newline
+    local escaped_error_msg=$(printf '%s' "${error_msg}" | tr -d '\000-\011\013-\037' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
+    local escaped_tool=$(echo "${tool}" | tr -d '\000-\011\013-\037' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
 
     # Build exception list
     local exception_list="[{\"type\":\"SetupFailure:${escaped_tool}\",\"value\":\"${escaped_error_msg}\",\"mechanism\":{\"type\":\"shell_script\",\"handled\":false},\"module\":\"${escaped_tool}\"}]"
@@ -219,76 +220,40 @@ function emit_setup_started_event {
         }' > /dev/null 2>&1
 }
 
-function build_results_json {
-    # Build complete results JSON object
-    local results_json="{"
-
-    # Count each status type
-    local already_installed_count=0
-    local installed_count=0
-    local failed_count=0
-
-    # Build tools object
-    local tools_json="{"
-    local sep=""
-    for i in {1..${#TOOL_NAMES[@]}}; do
-        # Escape strings for JSON (backslashes first, then quotes, then newlines)
-        local escaped_name=$(echo "${TOOL_NAMES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-        local escaped_msg=$(printf '%s' "${TOOL_MESSAGES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
-        local escaped_installer=$(echo "${TOOL_INSTALLERS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-        local escaped_version=$(echo "${TOOL_VERSIONS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-
-        tools_json+="${sep}\"${escaped_name}\": {\"tool\":\"${escaped_name}\",\"status\":\"${TOOL_STATUSES[$i]}\",\"installer\":\"${escaped_installer}\",\"version\":\"${escaped_version}\",\"message\":\"${escaped_msg}\",\"exit_code\":${TOOL_EXIT_CODES[$i]},\"timestamp\":\"${TOOL_TIMESTAMPS[$i]}\"}"
-
-        # Count status types
-        case "${TOOL_STATUSES[$i]}" in
-            "already_installed") ((already_installed_count++)) ;;
-            "installed") ((installed_count++)) ;;
-            "failed") ((failed_count++)) ;;
-        esac
-        sep=","
-    done
-    tools_json+="}"
-
-    results_json+="\"tools\":${tools_json},\"summary\":{\"already_installed\":${already_installed_count},\"installed\":${installed_count},\"failed\":${failed_count},\"total\":${#TOOL_NAMES[@]}}"
-    results_json+="}"
-
-    echo "${results_json}"
-}
-
 function get_shell_output {
     # Read and escape the complete shell output log
     local shell_output=""
     if [[ -f "${SETUP_LOG_FILE}" ]]; then
-        # Escape the log content for JSON (backslashes first, then quotes, then newlines, remove carriage returns)
-        shell_output=$(cat "${SETUP_LOG_FILE}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
+        # Escape the log content for JSON (backslashes first, then quotes)
+        # Remove ALL control characters including newlines to ensure valid JSON
+        shell_output=$(cat "${SETUP_LOG_FILE}" | tr -d '\000-\037' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
     fi
     echo "${shell_output}"
 }
 
 function emit_setup_finished_event {
     local LATEST_SCRIPT_VERSION=`get_latest_version`
-    local results_json=$(build_results_json)
     local shell_output=$(get_shell_output)
+
+    local json_data='{
+        "api_key": "'"${POSTHOG_KEY}"'",
+        "event": "setup:finished",
+        "properties": {
+            "distinct_id": "'"${USER}"'",
+            "user": "'"${USER}"'",
+            "timezone_offset": "'"${current_timezone}"'",
+            "session_key": "'"${session_key}"'",
+            "timestamp": "'"`get_timestamp`"'",
+            "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
+            "env": "'"${POSTHOG_ENV:-prod}"'",
+            "success": true,
+            "shell_output": "'"${shell_output}"'"
+        }
+    }'
 
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
-        --data '{
-            "api_key": "'"${POSTHOG_KEY}"'",
-            "event": "setup:finished",
-            "properties": {
-                "distinct_id": "'"${USER}"'",
-                "user": "'"${USER}"'",
-                "timezone_offset": "'"${current_timezone}"'",
-                "session_key": "'"${session_key}"'",
-                "timestamp": "'"`get_timestamp`"'",
-                "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
-                "env": "'"${POSTHOG_ENV:-prod}"'",
-                "success": true,
-                "results": '"${results_json}"',
-                "shell_output": "'"${shell_output}"'"
-            }
-        }' > /dev/null 2>&1
+        --data "${json_data}" > /dev/null 2>&1
 
     # Clean up the log file after sending
     rm -f "${SETUP_LOG_FILE}" 2>/dev/null
@@ -296,7 +261,6 @@ function emit_setup_finished_event {
 
 function emit_setup_failed_event {
     local LATEST_SCRIPT_VERSION=`get_latest_version`
-    local results_json=$(build_results_json)
     local shell_output=$(get_shell_output)
 
     # Build exception message from failed tools
@@ -308,43 +272,45 @@ function emit_setup_failed_event {
     done
 
     # Escape exception message for JSON
-    local escaped_exception_msg=$(printf '%s' "${exception_message}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
+    # Remove control characters except newline
+    local escaped_exception_msg=$(printf '%s' "${exception_message}" | tr -d '\000-\011\013-\037' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
 
     # Build exception list with all failed tools
     local exception_list="["
     sep=""
     for i in {1..${#FAILED_TOOLS[@]}}; do
-        local escaped_tool=$(echo "${FAILED_TOOLS[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-        local escaped_msg=$(printf '%s' "${FAILURE_MESSAGES[$i]}" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
+        local escaped_tool=$(echo "${FAILED_TOOLS[$i]}" | tr -d '\000-\011\013-\037' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+        local escaped_msg=$(printf '%s' "${FAILURE_MESSAGES[$i]}" | tr -d '\000-\011\013-\037' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{if(NR>1)printf "\\n"; printf "%s", $0}' | tr -d '\r')
 
         exception_list+="${sep}{\"type\":\"SetupFailure:${escaped_tool}\",\"value\":\"${escaped_msg}\",\"mechanism\":{\"type\":\"shell_script\",\"handled\":false},\"module\":\"${escaped_tool}\"}"
         sep=","
     done
     exception_list+="]"
 
+    local json_data='{
+        "api_key": "'"${POSTHOG_KEY}"'",
+        "event": "$exception",
+        "properties": {
+            "distinct_id": "'"${USER}"'",
+            "user": "'"${USER}"'",
+            "timezone_offset": "'"${current_timezone}"'",
+            "session_key": "'"${session_key}"'",
+            "timestamp": "'"`get_timestamp`"'",
+            "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
+            "env": "'"${POSTHOG_ENV:-prod}"'",
+            "$exception_type": "SetupFailure",
+            "$exception_message": "'"${escaped_exception_msg}"'",
+            "$exception_level": "error",
+            "$exception_list": '"${exception_list}"',
+            "$exception_fingerprint": "setup-failure-'"${session_key}"'",
+            "success": false,
+            "shell_output": "'"${shell_output}"'"
+        }
+    }'
+
     curl --silent -XPOST https://us.i.posthog.com/capture/ \
         --header "Content-Type: application/json" \
-        --data '{
-            "api_key": "'"${POSTHOG_KEY}"'",
-            "event": "$exception",
-            "properties": {
-                "distinct_id": "'"${USER}"'",
-                "user": "'"${USER}"'",
-                "timezone_offset": "'"${current_timezone}"'",
-                "session_key": "'"${session_key}"'",
-                "timestamp": "'"`get_timestamp`"'",
-                "latest_version": "'"${LATEST_SCRIPT_VERSION}"'",
-                "env": "'"${POSTHOG_ENV:-prod}"'",
-                "$exception_type": "SetupFailure",
-                "$exception_message": "'"${escaped_exception_msg}"'",
-                "$exception_level": "error",
-                "$exception_list": '"${exception_list}"',
-                "$exception_fingerprint": "setup-failure-'"${session_key}"'",
-                "success": false,
-                "results": '"${results_json}"',
-                "shell_output": "'"${shell_output}"'"
-            }
-        }' > /dev/null 2>&1
+        --data "${json_data}" > /dev/null 2>&1
 
     # Clean up the log file after sending
     rm -f "${SETUP_LOG_FILE}" 2>/dev/null
@@ -458,6 +424,8 @@ function asdf_install_and_set {
 #==============================================================================
 # MAIN EXECUTION FLOW
 #==============================================================================
+
+emit_setup_started_event
 
 #------------------------------------------------------------------------------
 # Initialization
@@ -1065,8 +1033,9 @@ else
 fi
 
 # Emit appropriate event based on success/failure
+# Run in background and disown so it persists after script exits
 if [[ ${#FAILED_TOOLS[@]} -eq 0 ]]; then
-    emit_setup_finished_event &
+    emit_setup_finished_event
 else
-    emit_setup_failed_event &
+    emit_setup_failed_event
 fi
