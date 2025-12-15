@@ -574,17 +574,25 @@ OLD_NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
 # Clean up old shell RC references from shell config files
 if [[ -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}" ]]; then
     for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
+        # Make a backup copy
+        rm -f "${shell_rc}.northslope.bak"
+        cp "${shell_rc}" "${shell_rc}.northslope.bak"
         if [[ -f "$shell_rc" ]]; then
-            # Check if old source line exists
+            # Remove old script path if exists
             if grep -q "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc"; then
-                # Remove the old source line
-                grep -v "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > "${shell_rc}.tmp"
-                mv "${shell_rc}.tmp" "$shell_rc"
+                grep -v "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > "${shell_rc}.northslope.tmp"
+                cat "${shell_rc}.northslope.tmp" > "$shell_rc"
+            fi
+
+            # Remove old header if exists
+            if grep -q "^# Added by Northslope" "${shell_rc}"; then
+                grep -v "^# Added by Northslope" "${shell_rc}" > "${shell_rc}.northslope.tmp"
+                cat "${shell_rc}.northslope.tmp" > "$shell_rc"
             fi
         fi
     done
 
-    # Remove old file from disk
+    # Remove old script disk
     rm -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}"
 fi
 
