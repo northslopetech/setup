@@ -508,7 +508,7 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
         grep "source ${northslope_shell_rc_path}" "$shell_rc" > /dev/null 2>&1
         northslope_rc_in_shell=$?
         if [[ ${northslope_rc_in_shell} -ne 0 ]]; then
-            echo "source ${northslope_shell_rc_path}" >> "$shell_rc"
+            echo "source ${northslope_shell_rc_path} # Added by Northslope" >> "$shell_rc"
         fi
     done
 done
