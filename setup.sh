@@ -495,6 +495,7 @@ NORTHSLOPE_DOWNLOADABLE_PATHS=(
     ${NORTHSLOPE_STARSHIP_CONFIG_PATH}
 )
 NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_STARSHIP_SHELL_RC_PATH})
+NORTHSLOPE_ADDED_TAG="# Added by Northslope"
 
 # Install in both bashrc and zshrc
 TARGET_SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
@@ -505,10 +506,10 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
         shell_name=$(basename "$shell_rc")
         shell_rc_name=$(basename ${northslope_shell_rc_path})
         touch "$shell_rc"
-        grep "source ${northslope_shell_rc_path}" "$shell_rc" > /dev/null 2>&1
+        grep "source ${northslope_shell_rc_path} ${NORTHSLOPE_ADDED_TAG}" "$shell_rc" > /dev/null 2>&1
         northslope_rc_in_shell=$?
         if [[ ${northslope_rc_in_shell} -ne 0 ]]; then
-            echo "source ${northslope_shell_rc_path} # Added by Northslope" >> "$shell_rc"
+            echo "source ${northslope_shell_rc_path} ${NORTHSLOPE_ADDED_TAG}" >> "$shell_rc"
         fi
     done
 done
