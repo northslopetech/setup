@@ -909,21 +909,29 @@ if [[ "${NS_CLI_BRANCH}" == "" ]]; then
         CURR_NS_CLI_VERSION=$(ns --version 2>/dev/null | awk '{print $1}' || echo "")
     fi
 
-    install_output=$(npm install -g @northslopetech/ns-cli 2>&1)
-    install_status=$?
-    if [[ ${install_status} -eq 0 ]]; then
-        NEW_NS_CLI_VERSION=$(ns --version 2>/dev/null | awk '{print $1}' || echo "")
-        if [[ ${NS_CLI_ALREADY_INSTALLED} -eq 0 ]]; then
-            if [[ "${NEW_NS_CLI_VERSION}" != "${CURR_NS_CLI_VERSION}" ]]; then
+    # Check latest version from npm registry
+    LATEST_NS_CLI_VERSION=$(npm view @northslopetech/ns-cli version 2>/dev/null || echo "")
+
+    # Only install if not installed or if version differs
+    if [[ ${NS_CLI_ALREADY_INSTALLED} -ne 0 ]] || [[ "${CURR_NS_CLI_VERSION}" != "${LATEST_NS_CLI_VERSION}" ]]; then
+        if [[ ${NS_CLI_ALREADY_INSTALLED} -ne 0 ]]; then
+            print_missing_msg "${TOOL}"
+        fi
+        install_output=$(npm install -g @northslopetech/ns-cli 2>&1)
+        install_status=$?
+        if [[ ${install_status} -eq 0 ]]; then
+            NEW_NS_CLI_VERSION=$(ns --version 2>/dev/null | awk '{print $1}' || echo "")
+            if [[ ${NS_CLI_ALREADY_INSTALLED} -eq 0 ]]; then
                 print_and_record_upgraded_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
             else
-                print_and_record_already_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
+                print_and_record_newly_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
             fi
         else
-            print_and_record_newly_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
+            print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
         fi
     else
-        print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
+        # Already installed and up to date
+        print_and_record_already_installed_msg "${TOOL}" ${CURR_NS_CLI_VERSION} "npm"
     fi
 else
     print_check_msg "${TOOL}:${NS_CLI_BRANCH}"
