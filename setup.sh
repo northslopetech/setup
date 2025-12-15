@@ -499,18 +499,8 @@ NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_STARSHIP_SHE
 # Install in both bashrc and zshrc
 TARGET_SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
 
-message="# Added by Northslope"
-
 any_missing=1
 for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
-    grep "${message}" "$shell_rc" > /dev/null 2>&1
-    northslope_note_exists=$?
-    if [[ ! ${northslope_note_exists} -eq 0 ]]; then
-        echo "" >> "$shell_rc"
-        echo "${message}" >> "$shell_rc"
-        echo "" >> "$shell_rc"
-    fi
-
     for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
         shell_name=$(basename "$shell_rc")
         shell_rc_name=$(basename ${northslope_shell_rc_path})
