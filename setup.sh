@@ -542,7 +542,6 @@ rm -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}"
 # Shell Setup: Remove Old Shell RC Setup
 #------------------------------------------------------------------------------
 
-any_missing=1
 for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
         shell_name=$(basename "$shell_rc")
