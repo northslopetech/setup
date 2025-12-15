@@ -506,6 +506,8 @@ TARGET_SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
 #------------------------------------------------------------------------------
 
 OLD_NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
+OLD_NORTHSLOPE_STARSHIP_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-starship-shell.rc
+OLD_SCRIPTS=($OLD_NORTHSLOPE_SHELL_RC_PATH $OLD_NORTHSLOPE_STARSHIP_SHELL_RC_PATH)
 
 # Clean up old shell RC references from shell config files
 for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
@@ -513,11 +515,14 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     rm -f "${shell_rc}.northslope.bak"
     cp "${shell_rc}" "${shell_rc}.northslope.bak"
     if [[ -f "$shell_rc" ]]; then
-        # Remove old script path if exists
-        if grep -q "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc"; then
-            grep -v "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > "${shell_rc}.northslope.tmp"
-            cat "${shell_rc}.northslope.tmp" > "$shell_rc"
-        fi
+        for old_script in "${OLD_SCRIPTS[@]}"; do
+            # Remove old script path if exists
+            if grep -q "source ${old_script}" "$shell_rc"; then
+                grep -v "source ${old_script}" "$shell_rc" > "${shell_rc}.northslope.tmp"
+                cat "${shell_rc}.northslope.tmp" > "$shell_rc"
+            fi
+            rm -f "${old_script}"
+        done
 
         # Remove old Northslope header if exists
         if grep -q "^# Added by Northslope" "${shell_rc}"; then
@@ -535,8 +540,6 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     fi
 done
 
-# Remove old script disk
-rm -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}"
 
 #------------------------------------------------------------------------------
 # Shell Setup: Remove Old Shell RC Setup
