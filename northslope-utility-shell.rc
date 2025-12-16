@@ -1,0 +1,19 @@
+# Detect current shell
+if [ -n "$BASH_VERSION" ]; then
+    CURRENT_SHELL="bash"
+elif [ -n "$ZSH_VERSION" ]; then
+    CURRENT_SHELL="zsh"
+else
+    echo "Warning: Unknown shell. Defaulting to bash compatibility mode."
+    CURRENT_SHELL="bash"
+fi
+
+NORTHSLOPE_DIR=${HOME}/.northslope
+NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
+
+if [[ "$CURRENT_SHELL" == "zsh" ]]; then
+    # zsh-autosuggestions
+    ZSH_AUTOSUGGESTIONS_DIR=${NORTHSLOPE_PACKAGES_DIR}/zsh-autosuggestions
+    ZSH_AUTOSUGGESTIONS_PLUGIN_PATH=${ZSH_AUTOSUGGESTIONS_DIR}/zsh-autosuggestions.zsh
+    [ -f "${ZSH_AUTOSUGGESTIONS_PLUGIN_PATH}" ] && source "${ZSH_AUTOSUGGESTIONS_PLUGIN_PATH}"
+fi
