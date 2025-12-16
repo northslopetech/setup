@@ -5,9 +5,25 @@ command_timeout = 1000
 
 # Custom format to include ns.config.json values
 format = """
-[┌──](bold green) $username $directory$nodejs$python$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
+[┌──](bold green) $username $directory$nodejs$python$fill$cmd_duration$time$git_branch$git_status${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
 $character
 """
+
+[fill]
+symbol = ' '
+style = ''
+
+[time]
+disabled = false
+time_format = "%H:%M:%S"
+style = "dim white"
+format = " [$time]($style)"
+
+[cmd_duration]
+min_time = 1_000
+show_milliseconds = false
+format = " [$duration]($style)"
+style = "bold yellow"
 
 [python]
 format = '[${symbol}${pyenv_prefix}(${version} ) ]($style)'
