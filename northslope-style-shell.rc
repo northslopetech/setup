@@ -9,7 +9,6 @@ else
 fi
 
 NORTHSLOPE_DIR=${HOME}/.northslope
-NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
 NORTHSLOPE_STARSHIP_CONFIG_PATH=${NORTHSLOPE_DIR}/starship.toml
 
 # starship setup

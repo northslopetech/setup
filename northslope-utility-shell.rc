@@ -13,6 +13,11 @@ NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
 
 if [[ "$CURRENT_SHELL" == "zsh" ]]; then
 
+    # zsh-autosuggestions
+    ZSH_AUTOSUGGESTIONS_DIR=${NORTHSLOPE_PACKAGES_DIR}/zsh-autosuggestions
+    ZSH_AUTOSUGGESTIONS_PLUGIN_PATH=${ZSH_AUTOSUGGESTIONS_DIR}/zsh-autosuggestions.zsh
+    [ -f "${ZSH_AUTOSUGGESTIONS_PLUGIN_PATH}" ] && source "${ZSH_AUTOSUGGESTIONS_PLUGIN_PATH}"
+
     # zsh-syntax-highlighting
     # MUST BE LOADED AT THE VERY END
     # SEE: https://github.com/zsh-users/zsh-syntax-highlighting?tab=readme-ov-file#why-must-zsh-syntax-highlightingzsh-be-sourced-at-the-end-of-the-zshrc-file
