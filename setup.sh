@@ -497,7 +497,7 @@ NORTHSLOPE_DOWNLOADABLE_PATHS=(
 NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_STYLE_SHELL_RC_PATH})
 NORTHSLOPE_ADDED_TAG="# Added by Northslope"
 
-# Manange both bashrc and zshrc
+# Manage both bashrc and zshrc
 TARGET_SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
 
 
