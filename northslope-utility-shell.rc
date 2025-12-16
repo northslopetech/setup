@@ -12,8 +12,14 @@ NORTHSLOPE_DIR=${HOME}/.northslope
 NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
 
 if [[ "$CURRENT_SHELL" == "zsh" ]]; then
+
     # zsh-autosuggestions
     ZSH_AUTOSUGGESTIONS_DIR=${NORTHSLOPE_PACKAGES_DIR}/zsh-autosuggestions
     ZSH_AUTOSUGGESTIONS_PLUGIN_PATH=${ZSH_AUTOSUGGESTIONS_DIR}/zsh-autosuggestions.zsh
     [ -f "${ZSH_AUTOSUGGESTIONS_PLUGIN_PATH}" ] && source "${ZSH_AUTOSUGGESTIONS_PLUGIN_PATH}"
+
+    # zsh-syntax-highlighting
+    ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_PACKAGES_DIR}/zsh-syntax-highlighting
+    ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH=${ZSH_SYNTAX_HIGHLIGHTING_DIR}/zsh-syntax-highlighting.zsh
+    [ -f "${ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH}" ] && source "${ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH}"
 fi
