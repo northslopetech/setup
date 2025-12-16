@@ -521,7 +521,6 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
                 grep -v "source ${old_script}" "$shell_rc" > "${shell_rc}.northslope.tmp"
                 cat "${shell_rc}.northslope.tmp" > "$shell_rc"
             fi
-            rm -f "${old_script}"
         done
 
         # Remove old Northslope header if exists
@@ -538,6 +537,10 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
             fi
         done
     fi
+done
+
+for old_script in "${OLD_SCRIPTS[@]}"; do
+    rm -f "${old_script}"
 done
 
 #------------------------------------------------------------------------------
