@@ -18,5 +18,6 @@ eval "$(starship init $CURRENT_SHELL)"
 # zsh-syntax-highlighting
 if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
     ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_DIR}/zsh-syntax-highlighting
-    source ${ZSH_SYNTAX_HIGHLIGHTING_DIR}/zsh-syntax-highlighting.zsh
+    ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH=${ZSH_SYNTAX_HIGHLIGHTING_DIR}/zsh-syntax-highlighting.zsh
+    [ -f "${ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH}" ] && source "${ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH}"
 fi
