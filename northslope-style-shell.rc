@@ -9,6 +9,7 @@ else
 fi
 
 NORTHSLOPE_DIR=${HOME}/.northslope
+NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
 NORTHSLOPE_STARSHIP_CONFIG_PATH=${NORTHSLOPE_DIR}/starship.toml
 
 # starship setup
@@ -17,7 +18,7 @@ eval "$(starship init $CURRENT_SHELL)"
 
 # zsh-syntax-highlighting
 if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
-    ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_DIR}/git/zsh-syntax-highlighting
+    ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_PACKAGES_DIR}/zsh-syntax-highlighting
     ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH=${ZSH_SYNTAX_HIGHLIGHTING_DIR}/zsh-syntax-highlighting.zsh
     [ -f "${ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH}" ] && source "${ZSH_SYNTAX_HIGHLIGHTING_PLUGIN_PATH}"
 fi
