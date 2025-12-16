@@ -499,7 +499,10 @@ NORTHSLOPE_ADDED_TAG="# Added by Northslope"
 
 # Manage both bashrc and zshrc
 TARGET_SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
-
+for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
+    # Create the shell rc file if it doesn't exist
+    touch "$shell_rc"
+done
 
 #------------------------------------------------------------------------------
 # Shell Setup: Remove Old Shell RC Setup
@@ -550,7 +553,6 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
         shell_name=$(basename "$shell_rc")
         shell_rc_name=$(basename ${northslope_shell_rc_path})
-        touch "$shell_rc"
         grep "source ${northslope_shell_rc_path} ${NORTHSLOPE_ADDED_TAG}" "$shell_rc" > /dev/null 2>&1
         northslope_rc_in_shell=$?
         if [[ ${northslope_rc_in_shell} -ne 0 ]]; then
