@@ -23,7 +23,7 @@ format = " [$time]($style)"
 min_time = 1_000
 show_milliseconds = false
 format = " [$duration]($style)"
-style = "bold yellow"
+style = "bold green"
 
 [python]
 format = '[${symbol}${pyenv_prefix}(${version} ) ]($style)'
