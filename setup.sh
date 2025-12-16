@@ -767,7 +767,7 @@ asdf reshim
 # Shell Utility
 #------------------------------------------------------------------------------
 
-ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_DIR}/zsh-syntax-highlighting
+ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_DIR}/git/zsh-syntax-highlighting
 TOOL="zsh-syntax-highlighting"
 print_check_msg "${TOOL}"
 if [[ -d "${ZSH_SYNTAX_HIGHLIGHTING_DIR}" ]]; then
