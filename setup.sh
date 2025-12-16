@@ -769,6 +769,25 @@ done
 asdf reshim
 
 #------------------------------------------------------------------------------
+# Shell Utility
+#------------------------------------------------------------------------------
+
+ZSH_AUTOSUGGESTIONS_DIR=${NORTHSLOPE_PACKAGES_DIR}/zsh-autosuggestions
+TOOL="zsh-autosuggestions"
+print_check_msg "${TOOL}"
+if [[ -d "${ZSH_AUTOSUGGESTIONS_DIR}" ]]; then
+    print_and_record_already_installed_msg "${TOOL}" "" "git"
+else
+    print_missing_msg "${TOOL}"
+    git clone https://github.com/zsh-users/zsh-autosuggestions.git ${ZSH_AUTOSUGGESTIONS_DIR}
+    if [[ $? -eq 0 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}" "" "git"
+    else
+        print_failed_install_msg "${TOOL}" "git clone failed" 1 "git" ""
+    fi
+fi
+
+#------------------------------------------------------------------------------
 # Authentication
 #------------------------------------------------------------------------------
 
