@@ -540,11 +540,9 @@ for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     fi
 done
 
-
 #------------------------------------------------------------------------------
-# Shell Setup: Remove Old Shell RC Setup
+# Shell Setup: Add Northslope configs
 #------------------------------------------------------------------------------
-
 for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
         shell_name=$(basename "$shell_rc")
