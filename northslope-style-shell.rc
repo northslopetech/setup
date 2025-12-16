@@ -14,3 +14,9 @@ NORTHSLOPE_STARSHIP_CONFIG_PATH=${NORTHSLOPE_DIR}/starship.toml
 # starship setup
 export STARSHIP_CONFIG=${NORTHSLOPE_STARSHIP_CONFIG_PATH}
 eval "$(starship init $CURRENT_SHELL)"
+
+# zsh-syntax-highlighting
+if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
+    ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_DIR}/zsh-syntax-highlighting
+    source ${ZSH_SYNTAX_HIGHLIGHTING_DIR}/zsh-syntax-highlighting.zsh
+fi
