@@ -399,6 +399,9 @@ emit_setup_started_event &
 
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
+NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
+mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
+
 #------------------------------------------------------------------------------
 # Permissions Check
 #------------------------------------------------------------------------------
@@ -484,17 +487,19 @@ NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-base-shell.rc
 NORTHSLOPE_STYLE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-style-shell.rc
+NORTHSLOPE_UTILITY_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-utility-shell.rc
 
 NORTHSLOPE_STARSHIP_CONFIG_PATH=${NORTHSLOPE_DIR}/starship.toml
 
 NORTHSLOPE_DOWNLOADABLE_PATHS=(
     ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     ${NORTHSLOPE_SHELL_RC_PATH}
+    ${NORTHSLOPE_UTILITY_SHELL_RC_PATH}
     ${NORTHSLOPE_STYLE_SHELL_RC_PATH}
 
     ${NORTHSLOPE_STARSHIP_CONFIG_PATH}
 )
-NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_STYLE_SHELL_RC_PATH})
+NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_UTILITY_SHELL_RC_PATH} ${NORTHSLOPE_STYLE_SHELL_RC_PATH})
 NORTHSLOPE_ADDED_TAG="# Added by Northslope"
 
 # Manage both bashrc and zshrc
@@ -764,6 +769,25 @@ done
 asdf reshim
 
 #------------------------------------------------------------------------------
+# Shell Utility
+#------------------------------------------------------------------------------
+
+ZSH_SYNTAX_HIGHLIGHTING_DIR=${NORTHSLOPE_PACKAGES_DIR}/zsh-syntax-highlighting
+TOOL="zsh-syntax-highlighting"
+print_check_msg "${TOOL}"
+if [[ -d "${ZSH_SYNTAX_HIGHLIGHTING_DIR}" ]]; then
+    print_and_record_already_installed_msg "${TOOL}" "" "git"
+else
+    print_missing_msg "${TOOL}"
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_SYNTAX_HIGHLIGHTING_DIR} > /dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}" "" "git"
+    else
+        print_failed_install_msg "${TOOL}" "git clone failed" 1 "git" ""
+    fi
+fi
+
+#------------------------------------------------------------------------------
 # Authentication
 #------------------------------------------------------------------------------
 
@@ -877,8 +901,6 @@ if [[ "${NS_CLI_BRANCH}" == "" ]]; then
     fi
 else
     print_check_msg "${TOOL}:${NS_CLI_BRANCH}"
-    NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
-    mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
     LOCAL_NS_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/ns-cli
 
     # Create a log file for this installation
