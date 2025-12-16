@@ -399,6 +399,9 @@ emit_setup_started_event &
 
 mkdir -p $NORTHSLOPE_DIR > /dev/null 2>&1
 
+NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
+mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
+
 #------------------------------------------------------------------------------
 # Permissions Check
 #------------------------------------------------------------------------------
@@ -877,8 +880,6 @@ if [[ "${NS_CLI_BRANCH}" == "" ]]; then
     fi
 else
     print_check_msg "${TOOL}:${NS_CLI_BRANCH}"
-    NORTHSLOPE_PACKAGES_DIR=${NORTHSLOPE_DIR}/packages
-    mkdir -p ${NORTHSLOPE_PACKAGES_DIR}
     LOCAL_NS_CLI_DIR=${NORTHSLOPE_PACKAGES_DIR}/ns-cli
 
     # Create a log file for this installation
