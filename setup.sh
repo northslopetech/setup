@@ -483,42 +483,80 @@ NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-base-shell.rc
-NORTHSLOPE_STARSHIP_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-starship-shell.rc
+NORTHSLOPE_STYLE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-style-shell.rc
 
 NORTHSLOPE_STARSHIP_CONFIG_PATH=${NORTHSLOPE_DIR}/starship.toml
 
 NORTHSLOPE_DOWNLOADABLE_PATHS=(
     ${NORTHSLOPE_SETUP_SCRIPT_PATH}
     ${NORTHSLOPE_SHELL_RC_PATH}
-    ${NORTHSLOPE_STARSHIP_SHELL_RC_PATH}
+    ${NORTHSLOPE_STYLE_SHELL_RC_PATH}
 
     ${NORTHSLOPE_STARSHIP_CONFIG_PATH}
 )
-NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_STARSHIP_SHELL_RC_PATH})
+NORTHSLOPE_SHELL_RC_PATHS=(${NORTHSLOPE_SHELL_RC_PATH} ${NORTHSLOPE_STYLE_SHELL_RC_PATH})
+NORTHSLOPE_ADDED_TAG="# Added by Northslope"
 
-# Install in both bashrc and zshrc
+# Manage both bashrc and zshrc
 TARGET_SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.zshrc")
-
-message="# Added by Northslope"
-
-any_missing=1
 for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
-    grep "${message}" "$shell_rc" > /dev/null 2>&1
-    northslope_note_exists=$?
-    if [[ ! ${northslope_note_exists} -eq 0 ]]; then
-        echo "" >> "$shell_rc"
-        echo "${message}" >> "$shell_rc"
-        echo "" >> "$shell_rc"
-    fi
+    # Create the shell rc file if it doesn't exist
+    touch "$shell_rc"
+done
 
+#------------------------------------------------------------------------------
+# Shell Setup: Remove Old Shell RC Setup
+#------------------------------------------------------------------------------
+
+OLD_NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
+OLD_NORTHSLOPE_STARSHIP_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-starship-shell.rc
+OLD_SCRIPTS=($OLD_NORTHSLOPE_SHELL_RC_PATH $OLD_NORTHSLOPE_STARSHIP_SHELL_RC_PATH)
+
+# Clean up old shell RC references from shell config files
+for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
+    # Make a backup copy
+    rm -f "${shell_rc}.northslope.bak"
+    cp "${shell_rc}" "${shell_rc}.northslope.bak"
+    if [[ -f "$shell_rc" ]]; then
+        for old_script in "${OLD_SCRIPTS[@]}"; do
+            # Remove old script path if exists
+            if grep -q "source ${old_script}" "$shell_rc"; then
+                grep -v "source ${old_script}" "$shell_rc" > "${shell_rc}.northslope.tmp"
+                cat "${shell_rc}.northslope.tmp" > "$shell_rc"
+            fi
+        done
+
+        # Remove old Northslope header if exists
+        if grep -q "^# Added by Northslope" "${shell_rc}"; then
+            grep -v "^# Added by Northslope" "${shell_rc}" > "${shell_rc}.northslope.tmp"
+            cat "${shell_rc}.northslope.tmp" > "$shell_rc"
+        fi
+
+        # Remove non-tagged script path if exists
+        for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
+            if grep -q "source ${northslope_shell_rc_path}$" "$shell_rc"; then
+                grep -v "source ${northslope_shell_rc_path}$" "$shell_rc" > "${shell_rc}.northslope.tmp"
+                cat "${shell_rc}.northslope.tmp" > "$shell_rc"
+            fi
+        done
+    fi
+done
+
+for old_script in "${OLD_SCRIPTS[@]}"; do
+    rm -f "${old_script}"
+done
+
+#------------------------------------------------------------------------------
+# Shell Setup: Add Northslope configs
+#------------------------------------------------------------------------------
+for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
     for northslope_shell_rc_path in "${NORTHSLOPE_SHELL_RC_PATHS[@]}"; do
         shell_name=$(basename "$shell_rc")
         shell_rc_name=$(basename ${northslope_shell_rc_path})
-        touch "$shell_rc"
-        grep "source ${northslope_shell_rc_path}" "$shell_rc" > /dev/null 2>&1
+        grep "source ${northslope_shell_rc_path} ${NORTHSLOPE_ADDED_TAG}" "$shell_rc" > /dev/null 2>&1
         northslope_rc_in_shell=$?
         if [[ ${northslope_rc_in_shell} -ne 0 ]]; then
-            echo "source ${northslope_shell_rc_path}" >> "$shell_rc"
+            echo "source ${northslope_shell_rc_path} ${NORTHSLOPE_ADDED_TAG}" >> "$shell_rc"
         fi
     done
 done
@@ -573,29 +611,6 @@ else
     else
         print_and_record_already_installed_msg "${TOOL}" `get_latest_version`
     fi
-fi
-
-#------------------------------------------------------------------------------
-# Migration: Remove Old Shell RC Setup
-#------------------------------------------------------------------------------
-
-OLD_NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-shell.rc
-
-# Clean up old shell RC references from shell config files
-if [[ -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}" ]]; then
-    for shell_rc in "${TARGET_SHELL_RC_FILES[@]}"; do
-        if [[ -f "$shell_rc" ]]; then
-            # Check if old source line exists
-            if grep -q "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc"; then
-                # Remove the old source line
-                grep -v "source ${OLD_NORTHSLOPE_SHELL_RC_PATH}" "$shell_rc" > "${shell_rc}.tmp"
-                mv "${shell_rc}.tmp" "$shell_rc"
-            fi
-        fi
-    done
-
-    # Remove old file from disk
-    rm -f "${OLD_NORTHSLOPE_SHELL_RC_PATH}"
 fi
 
 #------------------------------------------------------------------------------
