@@ -823,7 +823,7 @@ if [[ ${GH_AUTH_ALREADY_SET} -ne 0 ]]; then
         print_and_record_newly_installed_msg "${TOOL}" ${GH_VERSION} "gh"
     else
         print_failed_install_msg "${TOOL}" "gh auth login failed or was interrupted" ${gh_auth_status} "system" "${GH_VERSION}"
-        gh auth logout > /dev/null &2>1
+        gh auth logout > /dev/null 2>&1
     fi
 else
     GH_VERSION=$(gh --version 2>/dev/null | head -1 | awk '{print $3}' || echo "")
