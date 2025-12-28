@@ -732,7 +732,7 @@ fi
 # This is overwritable by the user
 TOOL="git config pull.rebase"
 print_check_msg ${TOOL}
-git config get --global pull.rebase > /dev/null 2>&1
+git config --global pull.rebase > /dev/null 2>&1
 GIT_PULL_REBASE_ALREADY_SET=$?
 if [[ ${GIT_PULL_REBASE_ALREADY_SET} -ne 0 ]]; then
     print_missing_msg ${TOOL}
