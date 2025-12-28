@@ -713,6 +713,8 @@ else
 fi
 
 # Check for git config push.autoSetupRemote
+# This config will auto-create remote branches
+# This is not overwritable by the user
 TOOL="git config push.autoSetupRemote"
 print_check_msg ${TOOL}
 git config --global push.autoSetupRemote | grep "true" > /dev/null 2>&1
@@ -720,6 +722,21 @@ GIT_PUSH_ALREADY_SET=$?
 if [[ ${GIT_PUSH_ALREADY_SET} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     git config --global push.autoSetupRemote true
+    print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
+else
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
+fi
+
+# Check for pull.rebase
+# This config will auto-merge when resolving remote branches with local branches (rather than rebase or fast-forward)
+# This is overwritable by the user
+TOOL="git config pull.rebase"
+print_check_msg ${TOOL}
+git config get --global pull.rebase > /dev/null 2>&1
+GIT_PULL_REBASE_ALREADY_SET=$?
+if [[ ${GIT_PULL_REBASE_ALREADY_SET} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    git config --global pull.rebase false
     print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
     print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
