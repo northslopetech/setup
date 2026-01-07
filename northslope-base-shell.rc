@@ -72,6 +72,26 @@ function gpr() {
     open "https://github.com/${org}/${repo}/pull/new/${branch}"
 }
 
+# github open - open the current repo in github
+function gho() {
+    # Get remote URL using git command (works from any subdirectory)
+    remote_url=`git config --get remote.origin.url`
+
+    # Parse org and repo from both SSH and HTTPS formats
+    if [[ $remote_url =~ ^git@github\.com:(.+)/(.+)\.git$ ]]; then
+        org="${match[1]}"
+        repo="${match[2]}"
+    elif [[ $remote_url =~ ^https://github\.com/(.+)/(.+)\.git$ ]]; then
+        org="${match[1]}"
+        repo="${match[2]}"
+    else
+        echo "Error: Could not parse GitHub URL from remote origin"
+        return 1
+    fi
+
+    open "https://github.com/${org}/${repo}"
+}
+
 # Northslope Paths
 NORTHSLOPE_DIR=${HOME}/.northslope
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
