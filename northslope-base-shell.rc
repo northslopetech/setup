@@ -29,6 +29,48 @@ function hlog {
 
 alias hl="hlog"
 
+# Helper function to extract GitHub org from remote URL
+function get_github_org() {
+    local remote_url="$1"
+
+    # Try SSH format first
+    local org=$(echo "$remote_url" | sed -n 's|^git@github\.com:\([^/]*\)/.*|\1|p')
+
+    # If SSH parsing failed, try HTTPS format
+    if [[ -z "$org" ]]; then
+        org=$(echo "$remote_url" | sed -n 's|^https://github\.com/\([^/]*\)/.*|\1|p')
+    fi
+
+    # Check if parsing succeeded
+    if [[ -z "$org" ]]; then
+        return 1
+    fi
+
+    echo "$org"
+    return 0
+}
+
+# Helper function to extract GitHub repo from remote URL
+function get_github_repo() {
+    local remote_url="$1"
+
+    # Try SSH format first
+    local repo=$(echo "$remote_url" | sed -n 's|^git@github\.com:[^/]*/\(.*\)\.git$|\1|p')
+
+    # If SSH parsing failed, try HTTPS format
+    if [[ -z "$repo" ]]; then
+        repo=$(echo "$remote_url" | sed -n 's|^https://github\.com/[^/]*/\(.*\)\.git$|\1|p')
+    fi
+
+    # Check if parsing succeeded
+    if [[ -z "$repo" ]]; then
+        return 1
+    fi
+
+    echo "$repo"
+    return 0
+}
+
 # github pull request opener
 function gpr() {
     # Ex. https://github.com/ORG/REPO/pull/new/BRANCH
@@ -48,21 +90,10 @@ function gpr() {
         return 1
     fi
 
-    # Parse org and repo from both SSH and HTTPS formats
-    # SSH format: git@github.com:org/repo.git
-    # HTTPS format: https://github.com/org/repo.git
+    # Parse org and repo using helper functions
+    org=$(get_github_org "$remote_url")
+    repo=$(get_github_repo "$remote_url")
 
-    # Try SSH format first
-    org=$(echo "$remote_url" | sed -n 's|^git@github\.com:\([^/]*\)/.*|\1|p')
-    repo=$(echo "$remote_url" | sed -n 's|^git@github\.com:[^/]*/\(.*\)\.git$|\1|p')
-
-    # If SSH parsing failed, try HTTPS format
-    if [[ -z "$org" || -z "$repo" ]]; then
-        org=$(echo "$remote_url" | sed -n 's|^https://github\.com/\([^/]*\)/.*|\1|p')
-        repo=$(echo "$remote_url" | sed -n 's|^https://github\.com/[^/]*/\(.*\)\.git$|\1|p')
-    fi
-
-    # Check if parsing succeeded
     if [[ -z "$org" || -z "$repo" ]]; then
         echo "Error: Could not parse GitHub URL from remote origin"
         return 1
@@ -77,14 +108,11 @@ function gho() {
     # Get remote URL using git command (works from any subdirectory)
     remote_url=`git config --get remote.origin.url`
 
-    # Parse org and repo from both SSH and HTTPS formats
-    if [[ $remote_url =~ ^git@github\.com:(.+)/(.+)\.git$ ]]; then
-        org="${match[1]}"
-        repo="${match[2]}"
-    elif [[ $remote_url =~ ^https://github\.com/(.+)/(.+)\.git$ ]]; then
-        org="${match[1]}"
-        repo="${match[2]}"
-    else
+    # Parse org and repo using helper functions
+    org=$(get_github_org "$remote_url")
+    repo=$(get_github_repo "$remote_url")
+
+    if [[ -z "$org" || -z "$repo" ]]; then
         echo "Error: Could not parse GitHub URL from remote origin"
         return 1
     fi
