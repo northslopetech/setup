@@ -72,7 +72,7 @@ function get_github_repo() {
 }
 
 # github pull request opener
-function gpr() {
+function gitopenpr() {
     # Ex. https://github.com/ORG/REPO/pull/new/BRANCH
     # Assumes autoSetupRemote = true
     git push origin || return 1
@@ -103,8 +103,10 @@ function gpr() {
     open "https://github.com/${org}/${repo}/pull/new/${branch}"
 }
 
-# github open - open the current repo in github
-function gho() {
+alias gpr="gitopenpr"
+
+# github repo opener
+function gitopenrepo() {
     # Get remote URL using git command (works from any subdirectory)
     remote_url=`git config --get remote.origin.url`
 
@@ -119,6 +121,8 @@ function gho() {
 
     open "https://github.com/${org}/${repo}"
 }
+
+alias gor="gitopenrepo"
 
 # Northslope Paths
 NORTHSLOPE_DIR=${HOME}/.northslope
