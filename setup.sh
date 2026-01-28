@@ -1052,14 +1052,14 @@ TOOL="claude marketplace northslope-claude-marketplace"
 print_check_msg "${TOOL}"
 
 # Check if marketplace is already installed
-claude plugin marketplace list 2>/dev/null | grep "northslopetech/claude-marketplace" > /dev/null 2>&1
+claude plugin marketplace list 2>/dev/null | grep "northslopetech/northslope-claude-marketplace" > /dev/null 2>&1
 MARKETPLACE_ALREADY_INSTALLED=$?
 
 # Use SSH or HTTPS URL based on detected git protocol
 if [[ "${GIT_PROTOCOL}" == "ssh" ]]; then
-    MARKETPLACE_URL="git@github.com:northslopetech/claude-marketplace.git"
+    MARKETPLACE_URL="git@github.com:northslopetech/northslope-claude-marketplace.git"
 else
-    MARKETPLACE_URL="https://github.com/northslopetech/claude-marketplace"
+    MARKETPLACE_URL="https://github.com/northslopetech/northslope-claude-marketplace"
 fi
 
 if [[ ${MARKETPLACE_ALREADY_INSTALLED} -ne 0 ]]; then
