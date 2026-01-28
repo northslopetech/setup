@@ -895,6 +895,34 @@ else
     print_and_record_already_installed_msg "${TOOL}" "" "gh"
 fi
 
+# Install northslope claude-code-resources marketplace
+TOOL="claude marketplace northslope-claude-resources"
+print_check_msg "${TOOL}"
+
+# Check if marketplace is already installed
+claude plugin marketplace list 2>/dev/null | grep "northslopetech/claude-code-resources" > /dev/null 2>&1
+MARKETPLACE_ALREADY_INSTALLED=$?
+
+if [[ ${MARKETPLACE_ALREADY_INSTALLED} -ne 0 ]]; then
+    print_missing_msg "${TOOL}"
+    add_output=$(claude plugin marketplace add https://github.com/northslopetech/claude-code-resources 2>&1)
+    add_status=$?
+    if [[ ${add_status} -eq 0 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}" "main" "claude"
+    else
+        print_failed_install_msg "${TOOL}" "Failed to add marketplace: ${add_output}" ${add_status} "claude" "main"
+    fi
+else
+    # Update the marketplace to ensure it's current
+    update_output=$(claude plugin marketplace update northslope-claude-resources 2>&1)
+    update_status=$?
+    if [[ ${update_status} -eq 0 ]]; then
+        print_and_record_already_installed_msg "${TOOL}" "main" "claude"
+    else
+        print_failed_install_msg "${TOOL}" "Failed to update marketplace: ${update_output}" ${update_status} "claude" "main"
+    fi
+fi
+
 #------------------------------------------------------------------------------
 # Northslope Tools
 #------------------------------------------------------------------------------
