@@ -867,6 +867,15 @@ else
     print_and_record_already_installed_msg "${TOOL}" ${GH_VERSION} "gh"
 fi
 
+# Detect git protocol and export GITHUB_TOKEN if using SSH
+GIT_PROTOCOL=$(gh config get git_protocol 2>/dev/null || echo "https")
+if [[ "${GIT_PROTOCOL}" == "ssh" ]]; then
+    export GITHUB_TOKEN=$(gh auth token 2>/dev/null)
+    if [[ -z "${GITHUB_TOKEN}" ]]; then
+        echo "⚠️  Warning: Failed to get GitHub token. Claude marketplace may not work properly."
+    fi
+fi
+
 # Ensure a part of the northslopetech organization
 TOOL="github northslopetech org"
 print_check_msg "${TOOL}"
@@ -1046,9 +1055,16 @@ print_check_msg "${TOOL}"
 claude plugin marketplace list 2>/dev/null | grep "northslopetech/claude-code-resources" > /dev/null 2>&1
 MARKETPLACE_ALREADY_INSTALLED=$?
 
+# Use SSH or HTTPS URL based on detected git protocol
+if [[ "${GIT_PROTOCOL}" == "ssh" ]]; then
+    MARKETPLACE_URL="git@github.com:northslopetech/claude-code-resources.git"
+else
+    MARKETPLACE_URL="https://github.com/northslopetech/claude-code-resources"
+fi
+
 if [[ ${MARKETPLACE_ALREADY_INSTALLED} -ne 0 ]]; then
     print_missing_msg "${TOOL}"
-    add_output=$(claude plugin marketplace add https://github.com/northslopetech/claude-code-resources 2>&1)
+    add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
     add_status=$?
     if [[ ${add_status} -eq 0 ]]; then
         print_and_record_newly_installed_msg "${TOOL}" "" "claude"
@@ -1064,7 +1080,7 @@ else
     else
         # Update failed, likely due to old branch reference - remove and re-add
         claude plugin marketplace remove northslope-claude-resources > /dev/null 2>&1
-        add_output=$(claude plugin marketplace add https://github.com/northslopetech/claude-code-resources 2>&1)
+        add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
         add_status=$?
         if [[ ${add_status} -eq 0 ]]; then
             print_and_record_already_installed_msg "${TOOL}" "" "claude"
