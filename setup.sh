@@ -867,9 +867,9 @@ else
     print_and_record_already_installed_msg "${TOOL}" ${GH_VERSION} "gh"
 fi
 
-# Detect git protocol and export GITHUB_TOKEN if using SSH
+# Detect git protocol and export GITHUB_TOKEN if using HTTPS
 GIT_PROTOCOL=$(gh config get git_protocol 2>/dev/null || echo "https")
-if [[ "${GIT_PROTOCOL}" == "ssh" ]]; then
+if [[ "${GIT_PROTOCOL}" == "https" ]]; then
     export GITHUB_TOKEN=$(gh auth token 2>/dev/null)
     if [[ -z "${GITHUB_TOKEN}" ]]; then
         echo "⚠️  Warning: Failed to get GitHub token. Claude marketplace may not work properly."
