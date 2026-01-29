@@ -867,6 +867,15 @@ else
     print_and_record_already_installed_msg "${TOOL}" ${GH_VERSION} "gh"
 fi
 
+# Detect git protocol and export GITHUB_TOKEN if using HTTPS
+GIT_PROTOCOL=$(gh config get git_protocol 2>/dev/null || echo "https")
+if [[ "${GIT_PROTOCOL}" == "https" ]]; then
+    export GITHUB_TOKEN=$(gh auth token 2>/dev/null)
+    if [[ -z "${GITHUB_TOKEN}" ]]; then
+        echo "⚠️  Warning: Failed to get GitHub token. Claude marketplace may not work properly."
+    fi
+fi
+
 # Ensure a part of the northslopetech organization
 TOOL="github northslopetech org"
 print_check_msg "${TOOL}"
@@ -1038,6 +1047,64 @@ else
     cd - > /dev/null 2>&1
 fi
 
+# Install northslope claude-marketplace
+TOOL="claude marketplace northslope-claude-marketplace"
+print_check_msg "${TOOL}"
+
+# Check if marketplace is already installed
+claude plugin marketplace list 2>/dev/null | grep "northslopetech/northslope-claude-marketplace" > /dev/null 2>&1
+MARKETPLACE_ALREADY_INSTALLED=$?
+
+# Use SSH or HTTPS URL based on detected git protocol
+if [[ "${GIT_PROTOCOL}" == "ssh" ]]; then
+    MARKETPLACE_URL="git@github.com:northslopetech/northslope-claude-marketplace.git"
+else
+    MARKETPLACE_URL="https://github.com/northslopetech/northslope-claude-marketplace"
+fi
+
+if [[ ${MARKETPLACE_ALREADY_INSTALLED} -ne 0 ]]; then
+    print_missing_msg "${TOOL}"
+    add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
+    add_status=$?
+    if [[ ${add_status} -eq 0 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}" "" "claude"
+    else
+        print_failed_install_msg "${TOOL}" "Failed to add marketplace: ${add_output}" ${add_status} "claude" ""
+    fi
+else
+    # Update the marketplace to ensure it's current
+    update_output=$(claude plugin marketplace update northslope-claude-marketplace 2>&1)
+    update_status=$?
+    if [[ ${update_status} -eq 0 ]]; then
+        print_and_record_already_installed_msg "${TOOL}" "" "claude"
+    else
+        # Update failed, likely due to old branch reference - remove and re-add
+        claude plugin marketplace remove northslope-claude-marketplace > /dev/null 2>&1
+        add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
+        add_status=$?
+        if [[ ${add_status} -eq 0 ]]; then
+            print_and_record_already_installed_msg "${TOOL}" "" "claude"
+        else
+            print_failed_install_msg "${TOOL}" "Failed to re-add marketplace after update failure: ${add_output}" ${add_status} "claude" ""
+        fi
+    fi
+fi
+
+# Enable auto-update for the marketplace
+MARKETPLACE_CONFIG="${HOME}/.claude/plugins/known_marketplaces.json"
+if [[ -f "${MARKETPLACE_CONFIG}" ]]; then
+    # Check if jq is available
+    if command -v jq > /dev/null 2>&1; then
+        # Enable auto-update for northslope-claude-marketplace
+        jq '.["northslope-claude-marketplace"].autoUpdate = true' "${MARKETPLACE_CONFIG}" > "${MARKETPLACE_CONFIG}.tmp" 2>/dev/null
+        if [[ $? -eq 0 ]] && [[ -s "${MARKETPLACE_CONFIG}.tmp" ]]; then
+            mv "${MARKETPLACE_CONFIG}.tmp" "${MARKETPLACE_CONFIG}"
+        else
+            rm -f "${MARKETPLACE_CONFIG}.tmp"
+            echo "   ⚠️  Could not enable auto-update for marketplace (non-fatal)"
+        fi
+    fi
+fi
 
 #------------------------------------------------------------------------------
 # Finalization
