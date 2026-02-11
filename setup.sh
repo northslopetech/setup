@@ -1046,7 +1046,7 @@ fi
 # NS CLI Upgrade Checker Crontab
 #------------------------------------------------------------------------------
 
-# Install crontab entry to run check-ns-upgrade.sh daily
+# Install crontab entry to run check-ns-upgrade.sh
 TOOL="ns-upgrade-checker cron"
 print_check_msg "${TOOL}"
 
@@ -1063,14 +1063,14 @@ current_crontab=$(crontab -l 2>/dev/null || echo "")
 
 # Check if our cron entry already exists
 if echo "${current_crontab}" | grep -F "${NORTHSLOPE_CHECK_NS_UPGRADE_PATH}" > /dev/null 2>&1; then
-    print_and_record_already_installed_msg "${TOOL}" "daily" "cron"
+    print_and_record_already_installed_msg "${TOOL}" "hourly" "cron"
 else
     # Add our cron entry
     (echo "${current_crontab}"; echo "${CRON_ENTRY}") | crontab -
     crontab_status=$?
 
     if [[ ${crontab_status} -eq 0 ]]; then
-        print_and_record_newly_installed_msg "${TOOL}" "daily" "cron"
+        print_and_record_newly_installed_msg "${TOOL}" "hourly" "cron"
     else
         print_failed_install_msg "${TOOL}" "Failed to install crontab entry" ${crontab_status} "cron" ""
     fi
