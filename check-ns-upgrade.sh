@@ -23,7 +23,7 @@ get_latest_npm_version() {
 
 # Function to get the local installed version
 get_local_ns_version() {
-    ns -V 2>/dev/null | tr -d 'v'
+    ns -V 2>/dev/null
 }
 
 # Function to compare versions (returns 0 if v1 != v2, 1 otherwise)
