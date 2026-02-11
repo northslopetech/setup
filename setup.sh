@@ -486,6 +486,7 @@ NORTHSLOPE_SETUP_SCRIPT_VERSION_PATH=${NORTHSLOPE_DIR}/setup-version
 
 NORTHSLOPE_SETUP_SCRIPT_PATH=${NORTHSLOPE_DIR}/northslope-setup.sh
 NORTHSLOPE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-base-shell.rc
+NORTHSLOPE_CHECK_NS_UPGRADE_PATH=${NORTHSLOPE_DIR}/check-ns-upgrade.sh
 NORTHSLOPE_STYLE_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-style-shell.rc
 NORTHSLOPE_UTILITY_SHELL_RC_PATH=${NORTHSLOPE_DIR}/northslope-utility-shell.rc
 
@@ -496,6 +497,7 @@ NORTHSLOPE_DOWNLOADABLE_PATHS=(
     ${NORTHSLOPE_SHELL_RC_PATH}
     ${NORTHSLOPE_STYLE_SHELL_RC_PATH}
     ${NORTHSLOPE_UTILITY_SHELL_RC_PATH}
+    ${NORTHSLOPE_CHECK_NS_UPGRADE_PATH}
 
     ${NORTHSLOPE_STARSHIP_CONFIG_PATH}
 )
@@ -902,6 +904,7 @@ fi
 # Install the ns-cli using the deployed npm package
 # unless a specific branch is requested, in which case
 # we build and deploy a local version from that branch
+NORTHSLOPE_VERSION_UPDATER_NOTICE_PATH=${NORTHSLOPE_DIR}/ns-upgrade-available
 TOOL="ns-cli"
 if [[ "${NS_CLI_BRANCH}" == "" ]]; then
     # Install ns-cli from npm
@@ -930,6 +933,7 @@ if [[ "${NS_CLI_BRANCH}" == "" ]]; then
             else
                 print_and_record_newly_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
             fi
+            rm -f "${NORTHSLOPE_VERSION_UPDATER_NOTICE_PATH}"
         else
             print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
         fi
@@ -1038,6 +1042,39 @@ else
     cd - > /dev/null 2>&1
 fi
 
+#------------------------------------------------------------------------------
+# NS CLI Upgrade Checker Crontab
+#------------------------------------------------------------------------------
+
+# Install crontab entry to run check-ns-upgrade.sh
+TOOL="ns-upgrade-checker cron"
+print_check_msg "${TOOL}"
+
+# Make sure the script is executable
+chmod +x ${NORTHSLOPE_CHECK_NS_UPGRADE_PATH} 2>/dev/null
+
+# Install crontab entry to run every hour
+CRON_COMMAND="${NORTHSLOPE_CHECK_NS_UPGRADE_PATH} > /dev/null 2>&1"
+CRON_SCHEDULE="0 * * * *"
+CRON_ENTRY="${CRON_SCHEDULE} ${CRON_COMMAND}"
+
+# Get current crontab (ignore errors if no crontab exists)
+current_crontab=$(crontab -l 2>/dev/null || echo "")
+
+# Check if our cron entry already exists
+if echo "${current_crontab}" | grep -F "${NORTHSLOPE_CHECK_NS_UPGRADE_PATH}" > /dev/null 2>&1; then
+    print_and_record_already_installed_msg "${TOOL}" "hourly" "cron"
+else
+    # Add our cron entry
+    (echo "${current_crontab}"; echo "${CRON_ENTRY}") | crontab -
+    crontab_status=$?
+
+    if [[ ${crontab_status} -eq 0 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}" "hourly" "cron"
+    else
+        print_failed_install_msg "${TOOL}" "Failed to install crontab entry" ${crontab_status} "cron" ""
+    fi
+fi
 
 #------------------------------------------------------------------------------
 # Finalization
