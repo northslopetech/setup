@@ -3,6 +3,13 @@
 # Check if ns-cli has an available upgrade
 # If a newer version is available, touch ~/.northslope/ns-upgrade-available
 
+
+## Setup executables
+# Homebrew
+eval $(/opt/homebrew/bin/brew shellenv)
+# asdf
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
 NORTHSLOPE_DIR=${HOME}/.northslope
 UPGRADE_AVAILABLE_FILE=${NORTHSLOPE_DIR}/ns-upgrade-available
 
