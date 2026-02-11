@@ -1059,19 +1059,10 @@ MARKETPLACE_ALREADY_INSTALLED=$?
 if [[ "${GIT_PROTOCOL}" == "ssh" ]]; then
     MARKETPLACE_URL="git@github.com:northslopetech/northslope-claude-marketplace.git"
 else
-    MARKETPLACE_URL="https://github.com/northslopetech/northslope-claude-marketplace"
+    MARKETPLACE_URL="https://github.com/northslopetech/northslope-claude-marketplace.git"
 fi
 
-if [[ ${MARKETPLACE_ALREADY_INSTALLED} -ne 0 ]]; then
-    print_missing_msg "${TOOL}"
-    add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
-    add_status=$?
-    if [[ ${add_status} -eq 0 ]]; then
-        print_and_record_newly_installed_msg "${TOOL}" "" "claude"
-    else
-        print_failed_install_msg "${TOOL}" "Failed to add marketplace: ${add_output}" ${add_status} "claude" ""
-    fi
-else
+if [[ ${MARKETPLACE_ALREADY_INSTALLED} -eq 0 ]]; then
     # Update the marketplace to ensure it's current
     update_output=$(claude plugin marketplace update northslope-claude-marketplace 2>&1)
     update_status=$?
@@ -1087,6 +1078,15 @@ else
         else
             print_failed_install_msg "${TOOL}" "Failed to re-add marketplace after update failure: ${add_output}" ${add_status} "claude" ""
         fi
+    fi
+else
+    print_missing_msg "${TOOL}"
+    add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
+    add_status=$?
+    if [[ ${add_status} -eq 0 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}" "" "claude"
+    else
+        print_failed_install_msg "${TOOL}" "Failed to add marketplace: ${add_output}" ${add_status} "claude" ""
     fi
 fi
 
