@@ -26,14 +26,12 @@ get_local_ns_version() {
     ns -V 2>/dev/null | tr -d 'v'
 }
 
-# Function to compare versions (returns 0 if v1 < v2, 1 otherwise)
-version_less_than() {
+# Function to compare versions (returns 0 if v1 != v2, 1 otherwise)
+version_not_equal() {
     local v1=$1
     local v2=$2
 
-    # Use sort -V for semantic version comparison
-    # If v1 appears first when sorted, it means v1 < v2
-    [ "$(printf '%s\n%s\n' "$v1" "$v2" | sort -V | head -n1)" = "$v1" ] && [ "$v1" != "$v2" ]
+    [ "$v1" != "$v2" ]
 }
 
 # Get versions
@@ -52,7 +50,7 @@ if [[ -z "${local_version}" ]]; then
 fi
 
 # Compare versions
-if version_less_than "${local_version}" "${latest_version}"; then
+if version_not_equal "${local_version}" "${latest_version}"; then
     echo "Upgrade available: ${local_version} -> ${latest_version}"
     touch "${UPGRADE_AVAILABLE_FILE}"
     exit 0
