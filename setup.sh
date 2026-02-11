@@ -902,6 +902,7 @@ fi
 # Install the ns-cli using the deployed npm package
 # unless a specific branch is requested, in which case
 # we build and deploy a local version from that branch
+NORTHSLOPE_VERSION_UPDATER_NOTICE_PATH=${NORTHSLOPE_DIR}/ns-upgrade-available
 TOOL="ns-cli"
 if [[ "${NS_CLI_BRANCH}" == "" ]]; then
     # Install ns-cli from npm
@@ -930,6 +931,7 @@ if [[ "${NS_CLI_BRANCH}" == "" ]]; then
             else
                 print_and_record_newly_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
             fi
+            rm ${NORTHSLOPE_VERSION_UPDATER_NOTICE_PATH}
         else
             print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
         fi
