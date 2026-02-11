@@ -933,7 +933,7 @@ if [[ "${NS_CLI_BRANCH}" == "" ]]; then
             else
                 print_and_record_newly_installed_msg "${TOOL}" ${NEW_NS_CLI_VERSION} "npm"
             fi
-            rm ${NORTHSLOPE_VERSION_UPDATER_NOTICE_PATH}
+            rm -f "${NORTHSLOPE_VERSION_UPDATER_NOTICE_PATH}"
         else
             print_failed_install_msg "${TOOL}" "npm install failed: ${install_output}" ${install_status} "npm" ""
         fi
