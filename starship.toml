@@ -29,7 +29,7 @@ style = "bold green"
 format = '[${symbol}${pyenv_prefix}(${version} ) ]($style)'
 
 [custom.upgrade_ns_notice]
-when = '[ -f ~/.zshrc ]'
+when = '[ -f ~/.northslope/ns-upgrade-available ]'
 format = "\n[├── ]($style)[ns-cli upgrade available:](bold white) Run `[setup](bold green)` to upgrade"
 style = 'bold green'
 
