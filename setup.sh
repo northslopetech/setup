@@ -673,6 +673,26 @@ for brew_tool in ${brew_tools[@]}; do
     brew_install_tool "${tool}" ${version_index}
 done
 
+# Install coreutils if timeout command doesn't exist
+TOOL=timeout
+print_check_msg ${TOOL}
+timeout --version > /dev/null 2>&1
+timeout_exists=$?
+if [[ ${timeout_exists} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install coreutils
+    COREUTILS_VERSION=$(brew list --versions coreutils 2>/dev/null | awk '{print $2}' || echo "")
+    print_and_record_newly_installed_msg "coreutils" "${COREUTILS_VERSION}" "brew"
+else
+    # timeout exists, check if it's from coreutils
+    COREUTILS_VERSION=$(brew list --versions coreutils 2>/dev/null | awk '{print $2}' || echo "")
+    if [[ -n "${COREUTILS_VERSION}" ]]; then
+        print_and_record_already_installed_msg "coreutils" "${COREUTILS_VERSION}" "brew"
+    else
+        print_and_record_already_installed_msg "${TOOL}" "" "system"
+    fi
+fi
+
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 #------------------------------------------------------------------------------
@@ -713,6 +733,8 @@ else
 fi
 
 # Check for git config push.autoSetupRemote
+# This config will auto-create remote branches
+# This is not overwritable by the user
 TOOL="git config push.autoSetupRemote"
 print_check_msg ${TOOL}
 git config --global push.autoSetupRemote | grep "true" > /dev/null 2>&1
@@ -720,6 +742,21 @@ GIT_PUSH_ALREADY_SET=$?
 if [[ ${GIT_PUSH_ALREADY_SET} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     git config --global push.autoSetupRemote true
+    print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
+else
+    print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
+fi
+
+# Check for pull.rebase
+# This config will auto-merge when resolving remote branches with local branches (rather than rebase or fast-forward)
+# This is overwritable by the user
+TOOL="git config pull.rebase"
+print_check_msg ${TOOL}
+git config --global pull.rebase > /dev/null 2>&1
+GIT_PULL_REBASE_ALREADY_SET=$?
+if [[ ${GIT_PULL_REBASE_ALREADY_SET} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    git config --global pull.rebase false
     print_and_record_newly_installed_msg "${TOOL}" ${GIT_VERSION}
 else
     print_and_record_already_installed_msg "${TOOL}" ${GIT_VERSION}
