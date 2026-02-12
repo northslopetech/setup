@@ -704,10 +704,10 @@ tmux_exists=$?
 if [[ ${tmux_exists} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install tmux
-    TMUX_VERSION=$(tmux -V)
+    TMUX_VERSION=$(tmux -V | head -1 | awk -F' ' '{print $2}')
     print_and_record_newly_installed_msg "${TOOL}" "${TMUX_VERSION}" "brew"
 else
-    TMUX_VERSION=$(tmux -V)
+    TMUX_VERSION=$(tmux -V | head -1 | awk -F' ' '{print $2}')
     print_and_record_already_installed_msg "${TOOL}" "${TMUX_VERSION}" "brew"
 fi
 
