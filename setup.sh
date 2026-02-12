@@ -1062,12 +1062,26 @@ else
     MARKETPLACE_URL="https://github.com/northslopetech/northslope-claude-marketplace.git"
 fi
 
-if [[ ${MARKETPLACE_ALREADY_INSTALLED} -eq 0 ]]; then
+# Track if marketplace installation/update succeeded
+MARKETPLACE_SUCCESS=0
+
+if [[ ${MARKETPLACE_ALREADY_INSTALLED} -ne 0 ]]; then
+    print_missing_msg "${TOOL}"
+    add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
+    add_status=$?
+    if [[ ${add_status} -eq 0 ]]; then
+        print_and_record_newly_installed_msg "${TOOL}" "" "claude"
+        MARKETPLACE_SUCCESS=1
+    else
+        print_failed_install_msg "${TOOL}" "Failed to add marketplace: ${add_output}" ${add_status} "claude" ""
+    fi
+else
     # Update the marketplace to ensure it's current
     update_output=$(claude plugin marketplace update northslope-claude-marketplace 2>&1)
     update_status=$?
     if [[ ${update_status} -eq 0 ]]; then
         print_and_record_already_installed_msg "${TOOL}" "" "claude"
+        MARKETPLACE_SUCCESS=1
     else
         # Update failed, likely due to old branch reference - remove and re-add
         claude plugin marketplace remove northslope-claude-marketplace > /dev/null 2>&1
@@ -1075,33 +1089,27 @@ if [[ ${MARKETPLACE_ALREADY_INSTALLED} -eq 0 ]]; then
         add_status=$?
         if [[ ${add_status} -eq 0 ]]; then
             print_and_record_already_installed_msg "${TOOL}" "" "claude"
+            MARKETPLACE_SUCCESS=1
         else
             print_failed_install_msg "${TOOL}" "Failed to re-add marketplace after update failure: ${add_output}" ${add_status} "claude" ""
         fi
     fi
-else
-    print_missing_msg "${TOOL}"
-    add_output=$(claude plugin marketplace add ${MARKETPLACE_URL} 2>&1)
-    add_status=$?
-    if [[ ${add_status} -eq 0 ]]; then
-        print_and_record_newly_installed_msg "${TOOL}" "" "claude"
-    else
-        print_failed_install_msg "${TOOL}" "Failed to add marketplace: ${add_output}" ${add_status} "claude" ""
-    fi
 fi
 
-# Enable auto-update for the marketplace
-MARKETPLACE_CONFIG="${HOME}/.claude/plugins/known_marketplaces.json"
-if [[ -f "${MARKETPLACE_CONFIG}" ]]; then
-    # Check if jq is available
-    if command -v jq > /dev/null 2>&1; then
-        # Enable auto-update for northslope-claude-marketplace
-        jq '.["northslope-claude-marketplace"].autoUpdate = true' "${MARKETPLACE_CONFIG}" > "${MARKETPLACE_CONFIG}.tmp" 2>/dev/null
-        if [[ $? -eq 0 ]] && [[ -s "${MARKETPLACE_CONFIG}.tmp" ]]; then
-            mv "${MARKETPLACE_CONFIG}.tmp" "${MARKETPLACE_CONFIG}"
-        else
-            rm -f "${MARKETPLACE_CONFIG}.tmp"
-            echo "   ⚠️  Could not enable auto-update for marketplace (non-fatal)"
+# Enable auto-update for the marketplace (only if installation/update succeeded)
+if [[ ${MARKETPLACE_SUCCESS} -eq 1 ]]; then
+    MARKETPLACE_CONFIG="${HOME}/.claude/plugins/known_marketplaces.json"
+    if [[ -f "${MARKETPLACE_CONFIG}" ]]; then
+        # Check if jq is available
+        if command -v jq > /dev/null 2>&1; then
+            # Enable auto-update for northslope-claude-marketplace
+            jq '.["northslope-claude-marketplace"].autoUpdate = true' "${MARKETPLACE_CONFIG}" > "${MARKETPLACE_CONFIG}.tmp" 2>/dev/null
+            if [[ $? -eq 0 ]] && [[ -s "${MARKETPLACE_CONFIG}.tmp" ]]; then
+                mv "${MARKETPLACE_CONFIG}.tmp" "${MARKETPLACE_CONFIG}"
+            else
+                rm -f "${MARKETPLACE_CONFIG}.tmp"
+                echo "   ⚠️  Could not enable auto-update for marketplace (non-fatal)"
+            fi
         fi
     fi
 fi
