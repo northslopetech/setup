@@ -675,6 +675,7 @@ for brew_tool in ${brew_tools[@]}; do
     brew_install_tool "${tool}" ${version_index}
 done
 
+
 # Install coreutils if timeout command doesn't exist
 TOOL=timeout
 print_check_msg ${TOOL}
@@ -693,6 +694,21 @@ else
     else
         print_and_record_already_installed_msg "${TOOL}" "" "system"
     fi
+fi
+
+# Install tmux
+TOOL=tmux
+print_check_msg ${TOOL}
+${TOOL} -V > /dev/null 2>&1
+timeout_exists=$?
+if [[ ${timeout_exists} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install tmux
+    TMUX_VERSION=$(tmux -V)
+    print_and_record_newly_installed_msg "${TOOL}" "${TMUX_VERSION}" "brew"
+else
+    TMUX_VERSION=$(tmux -V)
+    print_and_record_already_installed_msg "${TOOL}" "${TMUX_VERSION}" "brew"
 fi
 
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
