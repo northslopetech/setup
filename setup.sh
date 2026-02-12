@@ -695,6 +695,21 @@ else
     fi
 fi
 
+# Install tmux
+TOOL=tmux
+print_check_msg ${TOOL}
+${TOOL} -V > /dev/null 2>&1
+tmux_exists=$?
+if [[ ${tmux_exists} -ne 0 ]]; then
+    print_missing_msg ${TOOL}
+    brew install tmux
+    TMUX_VERSION=$(tmux -V | head -1 | awk -F' ' '{print $2}')
+    print_and_record_newly_installed_msg "${TOOL}" "${TMUX_VERSION}" "brew"
+else
+    TMUX_VERSION=$(tmux -V | head -1 | awk -F' ' '{print $2}')
+    print_and_record_already_installed_msg "${TOOL}" "${TMUX_VERSION}" "brew"
+fi
+
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 #------------------------------------------------------------------------------
