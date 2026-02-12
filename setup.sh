@@ -700,8 +700,8 @@ fi
 TOOL=tmux
 print_check_msg ${TOOL}
 ${TOOL} -V > /dev/null 2>&1
-timeout_exists=$?
-if [[ ${timeout_exists} -ne 0 ]]; then
+tmux_exists=$?
+if [[ ${tmux_exists} -ne 0 ]]; then
     print_missing_msg ${TOOL}
     brew install tmux
     TMUX_VERSION=$(tmux -V)
