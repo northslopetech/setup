@@ -5,7 +5,7 @@ command_timeout = 1000
 
 # Custom format to include ns.config.json values
 format = """
-[┌──](bold green) $username $directory$fill$cmd_duration$time$git_branch$git_status$nodejs$python${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}
+[┌──](bold green) $username $directory$fill$cmd_duration$time$git_branch$git_status$nodejs$python${custom.impl_project_prefix}${custom.impl_name}${custom.project_name}${custom.upgrade_ns_notice}
 $character
 """
 
@@ -27,6 +27,11 @@ style = "bold green"
 
 [python]
 format = '[${symbol}${pyenv_prefix}(${version} ) ]($style)'
+
+[custom.upgrade_ns_notice]
+when = '[ -f ~/.northslope/ns-upgrade-available ]'
+format = "\n[├── ]($style)[ns-cli upgrade available:](bold #999999) Run `[setup](bold green)` to upgrade"
+style = 'bold green'
 
 [custom.impl_project_prefix]
 when = '[ -f ns.config.json ]'
