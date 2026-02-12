@@ -675,7 +675,6 @@ for brew_tool in ${brew_tools[@]}; do
     brew_install_tool "${tool}" ${version_index}
 done
 
-
 # Install coreutils if timeout command doesn't exist
 TOOL=timeout
 print_check_msg ${TOOL}
