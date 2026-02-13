@@ -1115,6 +1115,9 @@ if [[ ${MARKETPLACE_SUCCESS} -eq 1 ]]; then
                 echo "   ⚠️  Could not enable auto-update for marketplace (non-fatal)"
             fi
         fi
+    fi
+fi
+
 #------------------------------------------------------------------------------
 # NS CLI Upgrade Checker Crontab
 #------------------------------------------------------------------------------
