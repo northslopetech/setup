@@ -53,7 +53,7 @@ CACHED_LATEST_VERSION=""
 
 function get_latest_version {
     if [[ "${CACHED_LATEST_VERSION}" == "" ]]; then
-        CACHED_LATEST_VERSION=$(curl -sL https://api.github.com/repos/northslopetech/setup/releases/latest | grep tag_name | awk -F'"' '{ print $4 }' | sed 's/ //g')
+        CACHED_LATEST_VERSION=$(curl -sL https://api.github.com/repos/northslope-tech/setup/releases/latest | grep tag_name | awk -F'"' '{ print $4 }' | sed 's/ //g')
     fi
     echo "${CACHED_LATEST_VERSION}"
 }
@@ -572,7 +572,7 @@ function download_latest_shell {
     pids=()
     for northslope_downloadable_path in "${NORTHSLOPE_DOWNLOADABLE_PATHS[@]}"; do
         filename=$(basename ${northslope_downloadable_path})
-        url=https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/${filename}
+        url=https://raw.githubusercontent.com/northslope-tech/setup/refs/heads/latest/${filename}
         curl -fsSL ${url} > ${northslope_downloadable_path} &
         pids+=($!)
     done
@@ -894,26 +894,26 @@ if [[ "${GIT_PROTOCOL}" == "https" ]]; then
 fi
 
 # Ensure a part of the northslopetech organization
-TOOL="github northslopetech org"
+TOOL="github northslope-tech org"
 print_check_msg "${TOOL}"
-gh org list | grep northslopetech > /dev/null 2>&1
+gh org list | grep northslope-tech > /dev/null 2>&1
 GH_IN_NORTHSLOPE_ORG=$?
 if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
     print_missing_msg "${TOOL}"
     echo ""
-    echo "⚠️ You are not a member of the northslopetech organization on Github."
+    echo "⚠️ You are not a member of the northslope-tech organization on Github."
     echo "   If you do not have an invitation, please contact Tam Nguyen (@tnguyen) to be added to the organization."
     echo "   Press enter to check if you have an invitation for the organization. Return here when you have accepted it."
     read
-    open 'https://github.com/orgs/northslopetech/invitation'
+    open 'https://github.com/orgs/northslope-tech/invitation'
     echo  ""
     echo "   Press enter to continue setup after accepting the invitation (or not)."
     echo "   If you did not have an invitation, please contact Tam Nguyen (@tnguyen) to be added to the organization."
     read
-    gh org list | grep northslopetech > /dev/null 2>&1
+    gh org list | grep northslope-tech > /dev/null 2>&1
     GH_IN_NORTHSLOPE_ORG=$?
     if [[ ${GH_IN_NORTHSLOPE_ORG} -ne 0 ]]; then
-        print_failed_install_msg "${TOOL}" "Not a member of northslopetech organization" 1 "gh" ""
+        print_failed_install_msg "${TOOL}" "Not a member of northslope-tech organization" 1 "gh" ""
     else
         print_and_record_newly_installed_msg "${TOOL}" "" "gh"
     fi
@@ -991,8 +991,8 @@ else
 
     # Clone repository if it doesn't exist
     if [[ ! -e ${LOCAL_NS_CLI_DIR} ]]; then
-        echo "$ gh repo clone northslopetech/ns-cli ${LOCAL_NS_CLI_DIR}" >> ${NS_CLI_INSTALL_LOG}
-        gh repo clone northslopetech/ns-cli ${LOCAL_NS_CLI_DIR} >> ${NS_CLI_INSTALL_LOG} 2>&1
+        echo "$ gh repo clone northslope-tech/ns-cli ${LOCAL_NS_CLI_DIR}" >> ${NS_CLI_INSTALL_LOG}
+        gh repo clone northslope-tech/ns-cli ${LOCAL_NS_CLI_DIR} >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
             should_install=0
             failed_step="gh repo clone"
@@ -1071,14 +1071,14 @@ TOOL="claude marketplace northslope-claude-marketplace"
 print_check_msg "${TOOL}"
 
 # Check if marketplace is already installed
-claude plugin marketplace list 2>/dev/null | grep "northslopetech/northslope-claude-marketplace" > /dev/null 2>&1
+claude plugin marketplace list 2>/dev/null | grep "northslope-tech/northslope-claude-marketplace" > /dev/null 2>&1
 MARKETPLACE_ALREADY_INSTALLED=$?
 
 # Use SSH or HTTPS URL based on detected git protocol
 if [[ "${GIT_PROTOCOL}" == "ssh" ]]; then
-    MARKETPLACE_URL="git@github.com:northslopetech/northslope-claude-marketplace.git"
+    MARKETPLACE_URL="git@github.com:northslope-tech/northslope-claude-marketplace.git"
 else
-    MARKETPLACE_URL="https://github.com/northslopetech/northslope-claude-marketplace.git"
+    MARKETPLACE_URL="https://github.com/northslope-tech/northslope-claude-marketplace.git"
 fi
 
 # Track if marketplace installation/update succeeded
