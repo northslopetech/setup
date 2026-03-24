@@ -572,7 +572,7 @@ function download_latest_shell {
     pids=()
     for northslope_downloadable_path in "${NORTHSLOPE_DOWNLOADABLE_PATHS[@]}"; do
         filename=$(basename ${northslope_downloadable_path})
-        url=https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/${filename}
+        url=https://setup.northslope.dev/${filename}
         curl -fsSL ${url} > ${northslope_downloadable_path} &
         pids+=($!)
     done
