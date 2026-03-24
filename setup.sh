@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+# TEST CURL CACHE
+
 #                                         XX                                      
 #                                       XX  XX                                    
 #                                     XX      X                                   
