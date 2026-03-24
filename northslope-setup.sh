@@ -102,7 +102,7 @@ esac
 # Always download the latest version unless explicitly skipped
 if [[ -z "${SKIP_UPDATE}" ]]; then
     # Download the new northslope-setup.sh
-    curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/northslope-setup.sh -o "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
+    curl_output=$(curl -fsSL https://setup.northslope.dev -o "${NORTHSLOPE_NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
     curl_exit_code=$?
     if [[ ${curl_exit_code} -ne 0 ]]; then
         error_msg="Failed to download updated northslope-setup.sh: ${curl_output}"
@@ -120,7 +120,7 @@ fi
 echo "Running 'setup' version $(get_local_version)"
 
 # Create a setup script so that we can pass in command line args
-curl_output=$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh -o "${NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
+curl_output=$(curl -fsSL https://setup.northslope.dev -o "${NORTHSLOPE_SETUP_SCRIPT_PATH}" 2>&1)
 curl_exit_code=$?
 if [[ ${curl_exit_code} -ne 0 ]]; then
     error_msg="Failed to download setup.sh: ${curl_output}"

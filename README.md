@@ -5,7 +5,7 @@
 Run the following command
 
 ```
-/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/northslopetech/setup/refs/heads/latest/setup.sh)"
+/bin/zsh -c "$(curl -fsSL https://setup.northslope.dev)"
 ```
 
 ## After
