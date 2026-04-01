@@ -1016,13 +1016,17 @@ else
         fi
     fi
 
-    # Checkout the specified branch
+    # Checkout the specified branch or tag
     if [[ ${should_install} -eq 1 ]]; then
         echo "$ git checkout origin/${NS_CLI_BRANCH}" >> ${NS_CLI_INSTALL_LOG}
         git checkout origin/${NS_CLI_BRANCH} >> ${NS_CLI_INSTALL_LOG} 2>&1
         if [[ $? -ne 0 ]]; then
-            should_install=0
-            failed_step="git checkout origin/${NS_CLI_BRANCH}"
+            echo "$ git checkout ${NS_CLI_BRANCH}" >> ${NS_CLI_INSTALL_LOG}
+            git checkout ${NS_CLI_BRANCH} >> ${NS_CLI_INSTALL_LOG} 2>&1
+            if [[ $? -ne 0 ]]; then
+                should_install=0
+                failed_step="git checkout ${NS_CLI_BRANCH}"
+            fi
         fi
     fi
 
